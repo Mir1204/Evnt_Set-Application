@@ -1,0 +1,2 @@
+C:/Users/Dell/AndroidStudioProjects/ADP/EvntSet-App/android/app/.cxx/RelWithDebInfo/4e252v2m/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/Dell/AndroidStudioProjects/ADP/EvntSet-App/android/app/.cxx/RelWithDebInfo/4e252v2m/armeabi-v7a/CMakeFiles/rebuild_cache.dir

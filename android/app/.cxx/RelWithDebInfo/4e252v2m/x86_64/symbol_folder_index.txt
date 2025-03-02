@@ -1,0 +1,1 @@
+C:\Users\Dell\AndroidStudioProjects\ADP\EvntSet-App\build\app\intermediates\cxx\RelWithDebInfo\4e252v2m\obj\x86_64
