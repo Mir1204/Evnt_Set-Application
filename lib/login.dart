@@ -14,32 +14,57 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
+  bool _isLoading = false;
 
-  void _login() async {
-    String email = _emailController.text.trim();
-    String password = _passwordController.text.trim();
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
+    );
+  }
+void _login() async {
+  String email = _emailController.text.trim();
+  String password = _passwordController.text.trim();
 
-    if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Please enter email and password")),
-      );
+  if (email.isEmpty || password.isEmpty) {
+    _showError("Please enter both email and password.");
+    return;
+  }
+
+  setState(() {
+    _isLoading = true;
+  });
+
+  try {
+    final result = await _authService.login(email, password);
+    print("Login API Response: $result"); // Debugging
+
+    if (result == null || result.isEmpty) {
+      _showError("Server returned an empty response. Please try again.");
       return;
     }
 
-    String? token = await _authService.login(email, password);
-    if (token != null) {
-      print("Login successful, Token: $token");
-      // Navigate to home screen or store the token for further use
+    if (result.containsKey("token")) {
+      print("Login successful, Token: ${result['token']}");
+
+      // Redirect to home page if login is successful
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => HomePage()),
       );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Invalid credentials")),
-      );
+      // Show error message when username or password is incorrect
+      _showError(result["error"] ?? "Incorrect username or password.");
     }
+  } catch (e) {
+    _showError("Login failed: ${e.toString()}");
+  } finally {
+    setState(() {
+      _isLoading = false;
+    });
   }
+}
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +92,15 @@ class _LoginPageState extends State<LoginPage> {
               obscureText: true,
             ),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _login,
-              child: const Text('Login'),
-            ),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _login,
+                    child: const Text('Login'),
+                  ),
             const SizedBox(height: 8),
             TextButton(
               onPressed: () {
-                // Navigate to the Sign Up page
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => SignUpPage()),

@@ -209,8 +209,8 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(builder: (context) => LoginPage()),
                 ).then((loggedIn) {
-                  if (loggedIn == true)
-                    setState(() => _isAuthenticated = true);
+                  // if (loggedIn == true)
+                  //   setState(() => _isAuthenticated = true);
                 });
               },
             ),

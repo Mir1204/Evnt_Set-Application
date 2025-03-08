@@ -12,6 +12,7 @@ class SignUpPage extends StatefulWidget {
 
 class _SignUpPageState extends State<SignUpPage> {
   final AuthService _authService = AuthService();
+  final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _studentIdController = TextEditingController();
@@ -31,7 +32,7 @@ class _SignUpPageState extends State<SignUpPage> {
   Future<void> _selectBirthdate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: _birthdate ?? DateTime.now(),
+      initialDate: _birthdate ?? DateTime(2000),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
@@ -44,26 +45,27 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   Future<void> _registerUser() async {
+    if (!_formKey.currentState!.validate()) return;
+
     final userData = {
-      "name": _nameController.text,
-      "Username": _studentIdController.text,
+      "name": _nameController.text.trim(),
+      "username": _studentIdController.text.trim(),
       "department": _selectedDepartment,
-      "year": _yearController.text,
+      "year": _yearController.text.trim(),
       "gender": _gender,
-      "birthdate": _birthdateController.text,
+      "birthdate": _birthdateController.text.trim(),
       "residence": _residence,
-      "mobile": _mobileController.text,
-      "email": _emailController.text,
-      "password": _passwordController.text,
+      "mobile": _mobileController.text.trim(),
+      "email": _emailController.text.trim(),
+      "password": _passwordController.text.trim(),
     };
 
-    bool success = await _authService.signup(userData);
-    if (success) {
-      // Redirect to home page after successful signup
+    final response = await _authService.signup(userData);
+    if (response['success']) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Signup failed! Please try again.")),
+        SnackBar(content: Text("Signup failed: ${response['error']}")),
       );
     }
   }
@@ -71,95 +73,110 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Sign Up"),
-      ),
+      appBar: AppBar(title: const Text("Sign Up")),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Name', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _studentIdController,
-              decoration: const InputDecoration(labelText: 'Student ID', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedDepartment,
-              items: _departments.map((dept) {
-                return DropdownMenuItem(value: dept, child: Text(dept));
-              }).toList(),
-              onChanged: (value) => setState(() => _selectedDepartment = value!),
-              decoration: const InputDecoration(labelText: 'Department', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _yearController,
-              decoration: const InputDecoration(labelText: 'Current Year', border: OutlineInputBorder()),
-              keyboardType: TextInputType.number,
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Text("Gender: "),
-                Radio<String>(value: 'Male', groupValue: _gender, onChanged: (value) => setState(() => _gender = value!)),
-                const Text("Male"),
-                Radio<String>(value: 'Female', groupValue: _gender, onChanged: (value) => setState(() => _gender = value!)),
-                const Text("Female"),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Text("Residence: "),
-                Radio<String>(value: 'Dayscholar', groupValue: _residence, onChanged: (value) => setState(() =>_residence = value!)),
-                const Text("Dayscholar"),
-                Radio<String>(value: 'Hosteler', groupValue: _residence, onChanged: (value) => setState(() => _residence = value!)),
-                const Text("Hosteler"),
-              ],
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _birthdateController,
-              readOnly: true,
-              decoration: const InputDecoration(labelText: 'Birthdate', border: OutlineInputBorder()),
-              onTap: () => _selectBirthdate(context),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _mobileController,
-              decoration: const InputDecoration(labelText: 'Mobile Number', border: OutlineInputBorder()),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email', border: OutlineInputBorder()),
-              keyboardType: TextInputType.emailAddress,
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
-              obscureText: true,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: _registerUser,
-              child: const Text('Sign Up'),
-            ),
-            const SizedBox(height: 8),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("Already have an account? Login"),
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              _buildTextField(controller: _nameController, label: 'Name', validator: _validateRequired),
+              _buildTextField(controller: _studentIdController, label: 'Student ID', validator: _validateRequired),
+              _buildDropdown(),
+              _buildTextField(controller: _yearController, label: 'Current Year', inputType: TextInputType.number, validator: _validateRequired),
+              _buildGenderSelection(),
+              _buildResidenceSelection(),
+              _buildTextField(controller: _birthdateController, label: 'Birthdate', readOnly: true, onTap: () => _selectBirthdate(context), validator: _validateRequired),
+              _buildTextField(controller: _mobileController, label: 'Mobile Number', inputType: TextInputType.phone, validator: _validateMobile),
+              _buildTextField(controller: _emailController, label: 'Email', inputType: TextInputType.emailAddress, validator: _validateEmail),
+              _buildTextField(controller: _passwordController, label: 'Password', obscureText: true, validator: _validatePassword),
+              const SizedBox(height: 24),
+              ElevatedButton(onPressed: _registerUser, child: const Text('Sign Up')),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Already have an account? Login"),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
+
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    bool readOnly = false,
+    VoidCallback? onTap,
+    TextInputType inputType = TextInputType.text,
+    bool obscureText = false,
+    String? Function(String?)? validator,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: TextFormField(
+        controller: controller,
+        readOnly: readOnly,
+        onTap: onTap,
+        keyboardType: inputType,
+        obscureText: obscureText,
+        validator: validator,
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+      ),
+    );
+  }
+
+  Widget _buildDropdown() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: DropdownButtonFormField<String>(
+        value: _selectedDepartment,
+        items: _departments.map((dept) => DropdownMenuItem(value: dept, child: Text(dept))).toList(),
+        onChanged: (value) => setState(() => _selectedDepartment = value!),
+        decoration: const InputDecoration(labelText: 'Department', border: OutlineInputBorder()),
+      ),
+    );
+  }
+
+  Widget _buildGenderSelection() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          const Text("Gender: "),
+          _buildRadio('Male', _gender, (value) => setState(() => _gender = value!)),
+          _buildRadio('Female', _gender, (value) => setState(() => _gender = value!)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResidenceSelection() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          const Text("Residence: "),
+          _buildRadio('DayScholar', _residence, (value) => setState(() => _residence = value!)),
+          _buildRadio('Hosteler', _residence, (value) => setState(() => _residence = value!)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRadio(String value, String groupValue, ValueChanged<String?> onChanged) {
+    return Row(
+      children: [
+        Radio<String>(value: value, groupValue: groupValue, onChanged: onChanged),
+        Text(value),
+      ],
+    );
+  }
+
+  // Validators
+  String? _validateRequired(String? value) => value == null || value.isEmpty ? 'This field is required' : null;
+  String? _validateEmail(String? value) => value != null && !RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value) ? 'Enter a valid email' : null;
+  String? _validateMobile(String? value) => value != null && value.length != 10 ? 'Enter a valid mobile number' : null;
+  String? _validatePassword(String? value) => value != null && value.length < 6 ? 'Password must be at least 6 characters' : null;
 }
