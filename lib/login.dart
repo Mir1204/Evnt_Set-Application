@@ -43,18 +43,16 @@ void _login() async {
       return;
     }
 
-    if (result.containsKey("token")) {
-      print("Login successful, Token: ${result['token']}");
+    if (result["success"] == true) {
+    print("Login successful, Token: ${result['token']}");
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => HomePage()),
+    );
+} else {
+    _showError(result["error"] ?? "Incorrect username or password.");
+}
 
-      // Redirect to home page if login is successful
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => HomePage()),
-      );
-    } else {
-      // Show error message when username or password is incorrect
-      _showError(result["error"] ?? "Incorrect username or password.");
-    }
   } catch (e) {
     _showError("Login failed: ${e.toString()}");
   } finally {

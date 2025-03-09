@@ -1,10 +1,16 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'editprofile.dart'; // Ensure this file exists and exports EditProfileScreen
-
+import 'package:evntset/services/auth_service.dart';
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http; // Adjust import path
+import 'package:http/io_client.dart';
 void main() {
   runApp(MyApp());
 }
+
+
 
 class MyApp extends StatelessWidget {
   @override
@@ -44,21 +50,22 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen>
     with SingleTickerProviderStateMixin {
   // Profile data
-  String name = "Mir Patel";
-  String id = "23DCS086";
-  String gender = "Male";
-  String mobile = "9106413122";
-  String department = "DEPSTAR CSE";
-  String dob = "30.09.2005";
-  String email = "mirpatel05.mp@gmail.com";
-  String studentType = "Day Scholar";
+  String name = "";
+  String id = "";
+  String gender = "";
+  String mobile = "";
+  String department = "";
+  String dob = "";
+  String email = "";
+  String studentType = "";
   String? profileImagePath;
 
-  late AnimationController _animationController;
-  late Animation<double> _cardAnimation;
+  bool isLoading = true;
+  String? errorMessage;
 
   @override
   void initState() {
+
     super.initState();
     _animationController = AnimationController(
       vsync: this,
@@ -69,7 +76,77 @@ class _ProfileScreenState extends State<ProfileScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
+    _fetchProfile();
   }
+
+ 
+Future<http.Client> createHttpClient() async {
+  HttpClient client = HttpClient();
+  
+  // ✅ Allow self-signed certificates
+  client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
+  
+  return IOClient(client);
+}
+
+Future<void> _fetchProfile() async {
+  try {
+    final authService = AuthService();
+    final token = await authService.getToken();
+    if (token == null) {
+      setState(() {
+        errorMessage = "User not authenticated";
+        isLoading = false;
+      });
+      return;
+    }
+
+    // ✅ Use custom HttpClient
+    http.Client httpClient = await createHttpClient();
+
+    final response = await httpClient.get(
+      Uri.parse("https://192.168.158.26:7172/api/auth/userinfo"), 
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      setState(() {
+        name = data["name"] ?? "Unknown";
+        id = data["id"] ?? "N/A";
+        gender = data["gender"] ?? "N/A";
+        mobile = data["mobile"] ?? "N/A";
+        department = data["department"] ?? "N/A";
+        dob = data["dob"] ?? "N/A";
+        email = data["email"] ?? "N/A";
+        studentType = data["studentType"] ?? "N/A";
+        // profileImagePath = data["profileImage"];
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        print("Response Status: ${response.statusCode}");
+print("Response Body: ${response.body}");
+
+        errorMessage = "Failed to load profile: ${response.statusCode}";
+        isLoading = false;
+      });
+    }
+  } catch (e) {
+    setState(() {
+      errorMessage = "Error: ${e.toString()}";
+      isLoading = false;
+    });
+  }
+}
+
+  late AnimationController _animationController;
+  late Animation<double> _cardAnimation;
+
+
 
   @override
   void dispose() {
@@ -101,7 +178,8 @@ class _ProfileScreenState extends State<ProfileScreen>
                         top: 150,
                         left: 0,
                         right: 0,
-                        child: _buildProfilePicture(),
+                        child: _buildProfilePicture()
+                        ,
                       ),
                     ],
                   ),
@@ -215,6 +293,7 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
   }
 
+
   /// Circular profile picture with a white border and subtle shadow.
   Widget _buildProfilePicture() {
     return Center(
@@ -222,20 +301,20 @@ class _ProfileScreenState extends State<ProfileScreen>
         width: 150,
         height: 150,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 4),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 5),
-            ),
-          ],
-        ),
-        child: CircleAvatar(
-          backgroundImage: profileImagePath != null
-              ? FileImage(File(profileImagePath!))
-              : const AssetImage("assets/profile.jpg") as ImageProvider,
+        //   shape: BoxShape.circle,
+        //   border: Border.all(color: Colors.white, width: 4),
+        //   boxShadow: const [
+        //     BoxShadow(
+        //       color: Colors.black26,
+        //       blurRadius: 10,
+        //       offset: Offset(0, 5),
+        //     ),
+        //   ],
+        // ),
+        // child: CircleAvatar(
+        //   backgroundImage: profileImagePath != null
+        //       ? FileImage(File(profileImagePath!))
+        //       : const AssetImage("assets/logo.jpg") as ImageProvider,
         ),
       ),
     );
@@ -243,38 +322,46 @@ class _ProfileScreenState extends State<ProfileScreen>
 
   /// Card containing all profile details.
   Widget _buildProfileCard() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-      child: Card(
-        elevation: 8,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              _buildProfileItem(Icons.person_outline, "Name", name),
-              _buildDivider(),
-              _buildProfileItem(Icons.badge_outlined, "ID", id),
-              _buildDivider(),
-              _buildProfileItem(Icons.person, "Gender", gender),
-              _buildDivider(),
-              _buildProfileItem(Icons.phone, "Mobile", mobile),
-              _buildDivider(),
-              _buildProfileItem(Icons.school, "Department", department),
-              _buildDivider(),
-              _buildProfileItem(Icons.calendar_today, "DOB", dob),
-              _buildDivider(),
-              _buildProfileItem(Icons.email_outlined, "Email", email),
-              _buildDivider(),
-              _buildProfileItem(Icons.category, "Student Type", studentType),
-            ],
-          ),
+  if (isLoading) {
+    return Center(child: CircularProgressIndicator());
+  }
+  if (errorMessage != null) {
+    return Center(child: Text(errorMessage!, style: TextStyle(color: Colors.red)));
+  }
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+    child: Card(
+      elevation: 8,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          children: [
+            _buildProfileItem(Icons.person_outline, "Name", name),
+            _buildDivider(),
+            _buildProfileItem(Icons.badge_outlined, "ID", id),
+            _buildDivider(),
+            _buildProfileItem(Icons.person, "Gender", gender),
+            _buildDivider(),
+            _buildProfileItem(Icons.phone, "Mobile", mobile),
+            _buildDivider(),
+            _buildProfileItem(Icons.school, "Department", department),
+            _buildDivider(),
+            _buildProfileItem(Icons.calendar_today, "DOB", dob),
+            _buildDivider(),
+            _buildProfileItem(Icons.email_outlined, "Email", email),
+            _buildDivider(),
+            _buildProfileItem(Icons.category, "Student Type", studentType),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
 
   /// A profile detail row with an icon, label, and value.
   Widget _buildProfileItem(IconData icon, String label, String value) {

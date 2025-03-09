@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import './services/auth_service.dart';
+import 'package:evntset/home_page.dart';
+import 'package:evntset/login.dart';
 
 class SignUpPage extends StatefulWidget {
   static const String routeName = '/signup';
@@ -62,8 +64,13 @@ class _SignUpPageState extends State<SignUpPage> {
 
     final response = await _authService.signup(userData);
     if (response['success']) {
-      Navigator.pushReplacementNamed(context, '/home');
-    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Signup successfull !!")),
+      );
+         Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );   } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Signup failed: ${response['error']}")),
       );
