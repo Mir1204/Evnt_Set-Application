@@ -105,7 +105,7 @@ Future<void> _fetchProfile() async {
     http.Client httpClient = await createHttpClient();
 
     final response = await httpClient.get(
-      Uri.parse("https://192.168.158.26:7172/api/auth/userinfo"), 
+      Uri.parse("https://evntset-backend.onrender.com/api/auth/userinfo"), 
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",

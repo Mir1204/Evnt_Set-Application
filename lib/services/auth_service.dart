@@ -5,7 +5,7 @@ import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  final String apiUrl = "https://192.168.158.26:7172/api/auth";
+  final String apiUrl = "https://evntset-backend.onrender.com/api/auth";
 
   HttpClient createHttpClient() {
     HttpClient httpClient = HttpClient();
