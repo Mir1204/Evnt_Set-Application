@@ -1,0 +1,2 @@
+C:/Users/Dell/AndroidStudioProjects/ADP/Evnt_Set/android/app/.cxx/Debug/6tv6m697/x86/CMakeFiles/edit_cache.dir
+C:/Users/Dell/AndroidStudioProjects/ADP/Evnt_Set/android/app/.cxx/Debug/6tv6m697/x86/CMakeFiles/rebuild_cache.dir

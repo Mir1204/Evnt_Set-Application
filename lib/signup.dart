@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import './services/auth_service.dart';
-import 'package:evntset/home_page.dart';
-import 'package:evntset/login.dart';
 
 class SignUpPage extends StatefulWidget {
   static const String routeName = '/signup';
@@ -65,12 +63,10 @@ class _SignUpPageState extends State<SignUpPage> {
     final response = await _authService.signup(userData);
     if (response['success']) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Signup successfull !!")),
+        SnackBar(content: Text("Signup successful! Please log in."), backgroundColor: Colors.green),
       );
-         Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
-    );   } else {
+      Navigator.pop(context, true);
+    } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Signup failed: ${response['error']}")),
       );
@@ -80,31 +76,71 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Sign Up")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            children: [
-              _buildTextField(controller: _nameController, label: 'Name', validator: _validateRequired),
-              _buildTextField(controller: _studentIdController, label: 'Student ID', validator: _validateRequired),
-              _buildDropdown(),
-              _buildTextField(controller: _yearController, label: 'Current Year', inputType: TextInputType.number, validator: _validateRequired),
-              _buildGenderSelection(),
-              _buildResidenceSelection(),
-              _buildTextField(controller: _birthdateController, label: 'Birthdate', readOnly: true, onTap: () => _selectBirthdate(context), validator: _validateRequired),
-              _buildTextField(controller: _mobileController, label: 'Mobile Number', inputType: TextInputType.phone, validator: _validateMobile),
-              _buildTextField(controller: _emailController, label: 'Email', inputType: TextInputType.emailAddress, validator: _validateEmail),
-              _buildTextField(controller: _passwordController, label: 'Password', obscureText: true, validator: _validatePassword),
-              const SizedBox(height: 24),
-              ElevatedButton(onPressed: _registerUser, child: const Text('Sign Up')),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text("Already have an account? Login"),
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFB3E5FC), Color(0xFF64B5F6)], // Light blue gradient
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.blueAccent.withOpacity(0.2),
+                    blurRadius: 10,
+                    spreadRadius: 2,
+                  )
+                ],
               ),
-            ],
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Create Account",
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                    ),
+                    const SizedBox(height: 20),
+                    _buildTextField(controller: _nameController, label: 'Full Name'),
+                    _buildTextField(controller: _studentIdController, label: 'Student ID'),
+                    _buildDropdown(),
+                    _buildTextField(controller: _yearController, label: 'Current Year', inputType: TextInputType.number),
+                    _buildGenderSelection(),
+                    _buildResidenceSelection(),
+                    _buildTextField(controller: _birthdateController, label: 'Birthdate', readOnly: true, onTap: () => _selectBirthdate(context)),
+                    _buildTextField(controller: _mobileController, label: 'Mobile Number', inputType: TextInputType.phone),
+                    _buildTextField(controller: _emailController, label: 'Email', inputType: TextInputType.emailAddress),
+                    _buildTextField(controller: _passwordController, label: 'Password', obscureText: true),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: _registerUser,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 40),
+                        backgroundColor: Colors.blueAccent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      ),
+                      child: const Text('Sign Up', style: TextStyle(fontSize: 18, color: Colors.white)),
+                    ),
+                    const SizedBox(height: 10),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text("Already have an account? Login", style: TextStyle(color: Colors.blueGrey)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
         ),
       ),
@@ -118,7 +154,6 @@ class _SignUpPageState extends State<SignUpPage> {
     VoidCallback? onTap,
     TextInputType inputType = TextInputType.text,
     bool obscureText = false,
-    String? Function(String?)? validator,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
@@ -128,8 +163,20 @@ class _SignUpPageState extends State<SignUpPage> {
         onTap: onTap,
         keyboardType: inputType,
         obscureText: obscureText,
-        validator: validator,
-        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: const TextStyle(color: Colors.blueGrey),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.blueAccent),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: const BorderSide(color: Colors.blue),
+          ),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.8),
+        ),
       ),
     );
   }
@@ -139,51 +186,34 @@ class _SignUpPageState extends State<SignUpPage> {
       padding: const EdgeInsets.only(bottom: 16.0),
       child: DropdownButtonFormField<String>(
         value: _selectedDepartment,
-        items: _departments.map((dept) => DropdownMenuItem(value: dept, child: Text(dept))).toList(),
+        items: _departments.map((dept) => DropdownMenuItem(value: dept, child: Text(dept, style: const TextStyle(color: Colors.black)))).toList(),
         onChanged: (value) => setState(() => _selectedDepartment = value!),
-        decoration: const InputDecoration(labelText: 'Department', border: OutlineInputBorder()),
+        dropdownColor: Colors.white,
+        decoration: InputDecoration(
+          labelText: 'Department',
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        ),
       ),
     );
   }
 
   Widget _buildGenderSelection() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        children: [
-          const Text("Gender: "),
-          _buildRadio('Male', _gender, (value) => setState(() => _gender = value!)),
-          _buildRadio('Female', _gender, (value) => setState(() => _gender = value!)),
-        ],
-      ),
-    );
+    return _buildRadioSelection("Gender", ['Male', 'Female'], _gender, (value) => setState(() => _gender = value!));
   }
 
   Widget _buildResidenceSelection() {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Row(
-        children: [
-          const Text("Residence: "),
-          _buildRadio('DayScholar', _residence, (value) => setState(() => _residence = value!)),
-          _buildRadio('Hosteler', _residence, (value) => setState(() => _residence = value!)),
-        ],
-      ),
-    );
+    return _buildRadioSelection("Residence", ['DayScholar', 'Hosteler'], _residence, (value) => setState(() => _residence = value!));
   }
 
-  Widget _buildRadio(String value, String groupValue, ValueChanged<String?> onChanged) {
-    return Row(
+  Widget _buildRadioSelection(String title, List<String> options, String groupValue, ValueChanged<String?> onChanged) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Radio<String>(value: value, groupValue: groupValue, onChanged: onChanged),
-        Text(value),
+        Text(title, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+        Row(
+          children: options.map((option) => Row(children: [Radio<String>(value: option, groupValue: groupValue, onChanged: onChanged), Text(option, style: const TextStyle(color: Colors.black))])).toList(),
+        ),
       ],
     );
   }
-
-  // Validators
-  String? _validateRequired(String? value) => value == null || value.isEmpty ? 'This field is required' : null;
-  String? _validateEmail(String? value) => value != null && !RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$').hasMatch(value) ? 'Enter a valid email' : null;
-  String? _validateMobile(String? value) => value != null && value.length != 10 ? 'Enter a valid mobile number' : null;
-  String? _validatePassword(String? value) => value != null && value.length < 6 ? 'Password must be at least 6 characters' : null;
 }
