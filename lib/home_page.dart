@@ -3,7 +3,6 @@ import 'for_you_page.dart';
 import 'all_events_page.dart';
 import 'profile_section.dart';
 import 'registered_events_section.dart';
-import 'login.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -15,72 +14,39 @@ class _HomePageState extends State<HomePage> {
   String selectedEventType = "All";
   bool _isAuthenticated = false;
   String selectedDepartment = "All";
+  String searchQuery = "";
+  bool isSearching = false;
+  TextEditingController searchController = TextEditingController();
 
   final List<String> eventTypes = [
-    "All",
-    "Culture",
-    "Sports",
-    "Tech",
-    "Workshop",
-    "Seminar",
-    "Conference",
-    "Concert",
-    "Hackathon",
-    "Entertainment"
+    "All", "Culture", "Sports", "Tech", "Workshop", "Seminar",
+    "Conference", "Concert", "Hackathon", "Entertainment"
   ];
 
   final List<String> departments = [
-    "All",
-    "DEPSTAR CSE",
-    "CSPIT CE",
-    "CMPICA",
-    "RPCP"
+    "All", "DEPSTAR CSE", "CSPIT CE", "CMPICA", "RPCP"
   ];
 
   final List<Map<String, String>> allEvents = [
-    {
-      "posterUrl": "assets/Event01.jpeg",
-      "title": "Cultural Fest",
-      "eventType": "Culture",
-      "department": "DEPSTAR CSE"
-    },
-    {
-      "posterUrl": "assets/Event2.jpeg",
-      "title": "Tech Talk",
-      "eventType": "Tech",
-      "department": "CSPIT CE"
-    },
-    {
-      "posterUrl": "assets/Event3.jpeg",
-      "title": "Sports Meet",
-      "eventType": "Sports",
-      "department": "CMPICA"
-    },
-    {
-      "posterUrl": "assets/Event4.jpeg",
-      "title": "Seminar on AI/ML",
-      "eventType": "Tech",
-      "department": "DEPSTAR CSE"
-    },
+    {"posterUrl": "assets/Event01.jpeg", "title": "Cultural Fest", "eventType": "Culture", "department": "DEPSTAR CSE"},
+    {"posterUrl": "assets/Event2.jpeg", "title": "Tech Talk", "eventType": "Tech", "department": "CSPIT CE"},
+    {"posterUrl": "assets/Event3.jpeg", "title": "Sports Meet", "eventType": "Sports", "department": "CMPICA"},
+    {"posterUrl": "assets/Event4.jpeg", "title": "Seminar on AI/ML", "eventType": "Tech", "department": "DEPSTAR CSE"},
   ];
 
   void _onItemTapped(int index) => setState(() => _selectedIndex = index);
-  void _onEventTypeSelected(String eventType) =>
-      setState(() => selectedEventType = eventType);
-  void _onDepartmentSelected(String department) =>
-      setState(() => selectedDepartment = department);
+  void _onEventTypeSelected(String eventType) => setState(() => selectedEventType = eventType);
+  void _onDepartmentSelected(String department) => setState(() => selectedDepartment = department);
 
   List<Map<String, String>> _filteredEvents() {
     return allEvents.where((event) {
-      bool matchesDepartment =
-          selectedDepartment == "All" || event["department"] == selectedDepartment;
-      bool matchesEventType =
-          selectedEventType == "All" || event["eventType"] == selectedEventType;
-      return matchesDepartment && matchesEventType;
+      bool matchesDepartment = selectedDepartment == "All" || event["department"] == selectedDepartment;
+      bool matchesEventType = selectedEventType == "All" || event["eventType"] == selectedEventType;
+      bool matchesSearch = searchQuery.isEmpty || event["title"]!.toLowerCase().contains(searchQuery.toLowerCase());
+      return matchesDepartment && matchesEventType && matchesSearch;
     }).toList();
   }
 
-  // New: A bottom sheet with a horizontal list of department chips
   void _showDepartmentFilterBottomSheet(BuildContext context) {
     showModalBottomSheet(
       context: context,
@@ -135,19 +101,14 @@ class _HomePageState extends State<HomePage> {
     if (_selectedIndex == 3) {
       bodyContent = ProfileScreen();
     } else if (_selectedIndex == 2) {
-      bodyContent =
-      _isAuthenticated ? RegisteredEventsSection() : _buildUnauthorizedMessage();
+      bodyContent = _isAuthenticated ? RegisteredEventsSection() : _buildUnauthorizedMessage();
     } else if (_selectedIndex == 0) {
       bodyContent = _isAuthenticated
           ? ForYouPage(
         events: _filteredEvents(),
         eventTypes: eventTypes,
         selectedEventType: selectedEventType,
-        onEventTypeSelected: (val) {
-          setState(() {
-            selectedEventType = val;
-          });
-        },
+        onEventTypeSelected: (val) => setState(() => selectedEventType = val),
       )
           : _buildUnauthorizedMessage();
     } else if (_selectedIndex == 1) {
@@ -155,24 +116,40 @@ class _HomePageState extends State<HomePage> {
         events: _filteredEvents(),
         eventTypes: eventTypes,
         selectedEventType: selectedEventType,
-        onEventTypeSelected: (val) {
-          setState(() {
-            selectedEventType = val;
-          });
-        },
+        onEventTypeSelected: (val) => setState(() => selectedEventType = val),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Image.asset('assets/Logo.PNG', height: 40),
-        actions: [
-          IconButton(icon: const Icon(Icons.search), onPressed: () {}),
-          // Use an icon button to open the department filter bottom sheet
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: () => _showDepartmentFilterBottomSheet(context),
+        title: isSearching
+            ? TextField(
+          controller: searchController,
+          autofocus: true,
+          decoration: InputDecoration(
+            hintText: "Search events...",
+            border: InputBorder.none,
           ),
+          onChanged: (value) => setState(() => searchQuery = value),
+        )
+            : Image.asset('assets/Logo.PNG', height: 40),
+        actions: [
+          isSearching
+              ? IconButton(
+            icon: const Icon(Icons.close),
+            onPressed: () {
+              setState(() {
+                isSearching = false;
+                searchQuery = "";
+                searchController.clear();
+              });
+            },
+          )
+              : IconButton(
+            icon: const Icon(Icons.search),
+            onPressed: () => setState(() => isSearching = true),
+          ),
+          IconButton(icon: const Icon(Icons.filter_list), onPressed: () => _showDepartmentFilterBottomSheet(context)),
           IconButton(
             icon: const Icon(Icons.notifications),
             onPressed: () => showDialog(
@@ -182,38 +159,17 @@ class _HomePageState extends State<HomePage> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: const [
-                    ListTile(
-                        leading: Icon(Icons.notifications),
-                        title: Text("Cultural Fest is starting soon!")),
-                    ListTile(
-                        leading: Icon(Icons.notifications),
-                        title: Text("New event: Tech Talk added.")),
-                    ListTile(
-                        leading: Icon(Icons.notifications),
-                        title: Text("Hackathon registration closes tomorrow.")),
+                    ListTile(leading: Icon(Icons.notifications), title: Text("Cultural Fest is starting soon!")),
+                    ListTile(leading: Icon(Icons.notifications), title: Text("New event: Tech Talk added.")),
+                    ListTile(leading: Icon(Icons.notifications), title: Text("Hackathon registration closes tomorrow.")),
                   ],
                 ),
                 actions: [
-                  TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text("Close"))
+                  TextButton(onPressed: () => Navigator.pop(context), child: const Text("Close"))
                 ],
               ),
             ),
           ),
-          if (!_isAuthenticated)
-            IconButton(
-              icon: const Icon(Icons.login),
-              onPressed: () {
-                Navigator.push<bool>(
-                  context,
-                  MaterialPageRoute(builder: (context) => LoginPage()),
-                ).then((loggedIn) {
-                  // if (loggedIn == true)
-                  //   setState(() => _isAuthenticated = true);
-                });
-              },
-            ),
         ],
       ),
       body: bodyContent,
