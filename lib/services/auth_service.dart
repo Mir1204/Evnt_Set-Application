@@ -5,9 +5,14 @@ import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
+<<<<<<< Updated upstream
    final String apiUrl = "https://evntset-backend.onrender.com/api/auth";
   // final String apiUrl = "http://192.168.51.78:5000/api/auth";
    //final String apiUrl = "http://localhost:5000/api/auth";
+=======
+  final String apiUrl = "http://192.168.237.26:5000/api/auth"; // Update based on your environment
+  final String apiKey = "Jay9101620"; // Replace with actual key
+>>>>>>> Stashed changes
 
   HttpClient createHttpClient() {
     HttpClient httpClient = HttpClient();
@@ -19,19 +24,28 @@ class AuthService {
     return IOClient(createHttpClient());
   }
 
+  Future<Map<String, String>> _getHeaders() async {
+    return {
+      "Content-Type": "application/json",
+      "x-api-key": "Jay9101620", // ✅ Add API Key
+    };
+  }
+
   Future<Map<String, dynamic>> login(String email, String password) async {
     try {
       final client = await getClient();
+      final headers = await _getHeaders();
+
       final response = await client.post(
         Uri.parse("$apiUrl/login"),
-        headers: {"Content-Type": "application/json"},
+        headers: headers,
         body: jsonEncode({"username": email, "password": password}),
       );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data.containsKey("token")) {
-          await _saveToken(data["token"]);
+          await _saveUserData(data);
           return {"success": true, "token": data["token"]};
         }
         return {"success": false, "error": "Token missing in response"};
@@ -41,13 +55,14 @@ class AuthService {
       return {"success": false, "error": "Login failed: ${e.toString()}"};
     }
   }
-
   Future<Map<String, dynamic>> signup(Map<String, dynamic> userData) async {
     try {
       final client = await getClient();
+      final headers = await _getHeaders(); // ✅ Secure headers with API Key
+
       final response = await client.post(
         Uri.parse("$apiUrl/register"),
-        headers: {"Content-Type": "application/json"},
+        headers: headers,
         body: jsonEncode(userData),
       );
 
@@ -60,18 +75,24 @@ class AuthService {
     }
   }
 
-  Future<void> _saveToken(String token) async {
+  Future<void> _saveUserData(Map<String, dynamic> data) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString("auth_token", token);
+    await prefs.setString("auth_token", data["token"]);
+    await prefs.setString("user", jsonEncode(data["user"]));
   }
 
-  Future<String?> getToken() async {
+  Future<Map<String, dynamic>?> getUserData() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getString("auth_token");
+    final userData = prefs.getString("user");
+    if (userData != null) {
+      return jsonDecode(userData);
+    }
+    return null;
   }
 
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove("auth_token");
+    await prefs.remove("user");
   }
 }
