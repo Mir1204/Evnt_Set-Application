@@ -1,16 +1,14 @@
 import 'dart:io';
+import 'package:flutter/material.dart';
 import 'editprofile.dart'; // Ensure this file exists and exports EditProfileScreen
 import 'package:evntset/services/auth_service.dart';
-import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http; // Adjust import path
 import 'package:http/io_client.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+
 void main() {
   runApp(MyApp());
 }
-
-
 
 class MyApp extends StatelessWidget {
   @override
@@ -76,7 +74,7 @@ class _ProfileScreenState extends State<ProfileScreen>
       curve: Curves.easeInOut,
     );
     _animationController.forward();
-  _loadUserData();
+    _fetchProfile();
   }
 
  
@@ -89,38 +87,47 @@ Future<http.Client> createHttpClient() async {
   return IOClient(client);
 }
 
- Future<void> _loadUserData() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final userData = prefs.getString("user_data");
-
-      if (userData != null) {
-        final data = jsonDecode(userData);
-        setState(() {
-          name = data["name"] ?? "Unknown";
-          id = data["id"] ?? "N/A";
-          gender = data["gender"] ?? "N/A";
-          mobile = data["mobile"] ?? "N/A";
-          department = data["department"] ?? "N/A";
-          dob = data["birthdate"] ?? "N/A";
-          email = data["email"] ?? "N/A";
-          studentType = data["residence"] ?? "N/A";
-          // profileImagePath = data["profileImage"];
-          isLoading = false;
-        });
-      } else {
-        setState(() {
-          errorMessage = "No user data found";
-          isLoading = false;
-        });
-      }
-    } catch (e) {
+Future<void> _fetchProfile() async {
+  try {
+    final authService = AuthService();
+    final token = await authService.authtocken();
+    if (token == null) {
       setState(() {
-        errorMessage = "Error loading user data: ${e.toString()}";
+        errorMessage = "User not authenticated";
+        isLoading = false;
+      });
+      return;
+    }
+
+    // Fetch user data from SharedPreferences
+    final userData = await authService.getUserData();
+    if (userData != null) {
+      setState(() {
+        name = userData['name'];
+        id = userData['username'];
+        gender = userData['gender'];
+        mobile = userData['mobile'];
+        department = userData['department'];
+        dob = userData['birthdate'];
+        email = userData['email'];
+        studentType = userData['residence'];
+        profileImagePath = userData['profileImagePath'];
+        isLoading = false;
+      });
+    } else {
+      setState(() {
+        errorMessage = "Failed to load profile data";
         isLoading = false;
       });
     }
+  } catch (e) {
+    setState(() {
+      errorMessage = "Error: ${e.toString()}";
+      isLoading = false;
+    });
   }
+}
+
   late AnimationController _animationController;
   late Animation<double> _cardAnimation;
 
@@ -133,146 +140,170 @@ Future<http.Client> createHttpClient() async {
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    appBar: AppBar(title: Text("Profile")),
-    body: isLoading
-        ? Center(child: CircularProgressIndicator())
-        : errorMessage != null
-            ? Center(child: Text(errorMessage!, style: TextStyle(color: Colors.red)))
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(),
-                    SizedBox(height: 20),
-                    _buildProfilePicture(),
-                    SizedBox(height: 20),
-                    _buildProfileCard(),
-                  ],
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: Container(
+        width: double.infinity,
+        height: double.infinity,
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height,
+            ),
+            child: Column(
+              children: [
+                // Header and profile picture container.
+                Container(
+                  height: 300,
+                  child: Stack(
+                    children: [
+                      _buildHeader(),
+                      Positioned(
+                        top: 150,
+                        left: 0,
+                        right: 0,
+                        child: _buildProfilePicture()
+                        ,
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-  );
-}
+                const SizedBox(height: 20),
+                // Animated profile details card.
+                SlideTransition(
+                  position: Tween<Offset>(
+                    begin: const Offset(0, 0.1),
+                    end: Offset.zero,
+                  ).animate(_cardAnimation),
+                  child: FadeTransition(
+                    opacity: _cardAnimation,
+                    child: _buildProfileCard(),
+                  ),
+                ),
+                const SizedBox(height: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
   /// A more beautiful header with a wavy bottom edge, decorative shapes, and modern typography.
   Widget _buildHeader() {
-  return ClipPath(
-    clipper: WaveClipper(),
-    child: Container(
-      height: 250,
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.blueAccent, Colors.blue],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+    return ClipPath(
+      clipper: WaveClipper(),
+      child: Container(
+        height: 250,
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Colors.blueAccent, Colors.blue],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black26,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -40,
-            right: -40,
-            child: _buildDecorativeCircle(100, 0.2),
-          ),
-          Positioned(
-            top: 50,
-            left: -30,
-            child: _buildDecorativeCircle(80, 0.15),
-          ),
-          Positioned(
-            bottom: 30,
-            right: 20,
-            child: Transform.rotate(
-              angle: 0.3,
+        child: Stack(
+          children: [
+            // Large decorative circle in the top-right.
+            Positioned(
+              top: -40,
+              right: -40,
               child: Container(
-                width: 40,
-                height: 40,
+                width: 100,
+                height: 100,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.2),
                 ),
               ),
             ),
-          ),
-          Align(
-            alignment: Alignment.center,
-            child: Text(
-              "My Profile",
-              style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                fontSize: 42,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-                letterSpacing: 1.5,
+            // Smaller decorative circle in the top-left.
+            Positioned(
+              top: 50,
+              left: -30,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withOpacity(0.15),
+                ),
               ),
             ),
-          ),
-          Positioned(
-            top: 40,
-            right: 20,
-            child: _buildEditButton(),
-          ),
-        ],
+            // A rotated square for extra flair.
+            Positioned(
+              bottom: 30,
+              right: 20,
+              child: Transform.rotate(
+                angle: 0.3,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.1),
+                  ),
+                ),
+              ),
+            ),
+            // Centered header title.
+            Align(
+              alignment: Alignment.center,
+              child: Text(
+                "My Profile",
+                style: Theme.of(context).textTheme.titleLarge!.copyWith(
+                  fontSize: 42,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+            // Edit button in the top-right corner.
+            Positioned(
+              top: 40,
+              right: 20,
+              child: _buildEditButton(),
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
-Widget _buildDecorativeCircle(double size, double opacity) {
-  return Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      shape: BoxShape.circle,
-      color: Colors.white.withOpacity(opacity),
-    ),
-  );
-}
-
-/// Circular profile picture with a white border and subtle shadow.
-Widget _buildProfilePicture() {
-  return Center(
-    child: CircleAvatar(
-      radius: 75,
-      backgroundColor: Colors.white,
-      backgroundImage: profileImagePath != null
-          ? FileImage(File(profileImagePath!))
-          : AssetImage("assets/logo.jpg") as ImageProvider,
-    ),
-  );
-}
+    );
+  }
 
 
   /// Circular profile picture with a white border and subtle shadow.
-  // Widget _buildProfilePicture() {
-  //   return Center(
-  //     child: Container(
-  //       width: 150,
-  //       height: 150,
-  //       decoration: BoxDecoration(
-  //       //   shape: BoxShape.circle,
-  //       //   border: Border.all(color: Colors.white, width: 4),
-  //       //   boxShadow: const [
-  //       //     BoxShadow(
-  //       //       color: Colors.black26,
-  //       //       blurRadius: 10,
-  //       //       offset: Offset(0, 5),
-  //       //     ),
-  //       //   ],
-  //       // ),
-  //       // child: CircleAvatar(
-  //       //   backgroundImage: profileImagePath != null
-  //       //       ? FileImage(File(profileImagePath!))
-  //       //       : const AssetImage("assets/logo.jpg") as ImageProvider,
-  //       ),
-  //     ),
-  //   );
-  // }
+  Widget _buildProfilePicture() {
+    return Center(
+      child: Container(
+        width: 150,
+        height: 150,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: Colors.white, width: 4),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black26,
+              blurRadius: 10,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: CircleAvatar(
+          backgroundImage: profileImagePath != null
+              ? FileImage(File(profileImagePath!))
+              : const AssetImage("assets/logo.jpg") as ImageProvider,
+        ),
+      ),
+    );
+  }
 
   /// Card containing all profile details.
   Widget _buildProfileCard() {
@@ -318,26 +349,48 @@ Widget _buildProfilePicture() {
 
 
   /// A profile detail row with an icon, label, and value.
- Widget _buildProfileItem(IconData icon, String title, String value) {
-  return Row(
-    children: [
-      Icon(icon, color: Colors.blue),
-      SizedBox(width: 10),
-      Expanded(
-        child: Text(
-          "$title: $value",
-          style: TextStyle(fontSize: 18),
-        ),
+  Widget _buildProfileItem(IconData icon, String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.blue, size: 24),
+          const SizedBox(width: 16),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                value,
+                style: const TextStyle(
+                  color: Colors.black87,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-    ],
-  );
-}
+    );
+  }
 
   /// A subtle divider between profile items.
-Widget _buildDivider() {
-  return Divider(color: Colors.grey.shade300, thickness: 1);
-}
-
+  Widget _buildDivider() {
+    return Divider(
+      height: 20,
+      color: Colors.grey[300],
+      thickness: 1,
+    );
+  }
 
   /// An edit button that navigates to the EditProfileScreen.
   Widget _buildEditButton() {

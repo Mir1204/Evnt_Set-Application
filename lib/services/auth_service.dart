@@ -5,24 +5,13 @@ import 'package:http/io_client.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+
    final String apiUrl = "https://evntset-backend.onrender.com/api/auth";
   // final String apiUrl = "http://192.168.51.78:5000/api/auth";
    //final String apiUrl = "http://localhost:5000/api/auth";
-=======
-  final String apiUrl = "http://192.168.237.26:5000/api/auth"; // Update based on your environment
+// =======
+  // final String apiUrl = "http://192.168.237.26:5000/api/auth"; // Update based on your environment
   final String apiKey = "Jay9101620"; // Replace with actual key
->>>>>>> Stashed changes
-=======
-  final String apiUrl = "http://192.168.237.26:5000/api/auth"; // Update based on your environment
-  final String apiKey = "Jay9101620"; // Replace with actual key
->>>>>>> Stashed changes
-=======
-  final String apiUrl = "http://192.168.237.26:5000/api/auth"; // Update based on your environment
-  final String apiKey = "Jay9101620"; // Replace with actual key
->>>>>>> Stashed changes
 
   HttpClient createHttpClient() {
     HttpClient httpClient = HttpClient();
@@ -39,6 +28,11 @@ class AuthService {
       "Content-Type": "application/json",
       "x-api-key": "Jay9101620", // ✅ Add API Key
     };
+  }
+  authtocken() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString("auth_token");
+    return token;
   }
 
   Future<Map<String, dynamic>> login(String email, String password) async {

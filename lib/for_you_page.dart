@@ -38,7 +38,7 @@ class _ForYouPageState extends State<ForYouPage> {
 
   Future<void> _checkAuthStatus() async {
     final authService = AuthService();
-    authToken = await authService.getToken();
+    authToken = await authService.authtocken();
 
     if (authToken == null) {
       print("User is not logged in!");
