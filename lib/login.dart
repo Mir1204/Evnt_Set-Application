@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import './services/auth_service.dart';
 import 'home_page.dart';
 import 'signup.dart';
@@ -15,6 +16,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passwordController = TextEditingController();
   final AuthService _authService = AuthService();
   bool _isLoading = false;
+  bool _isPasswordVisible = false;
 
   void _showMessage(String message, {Color color = Colors.red}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -71,7 +73,7 @@ class _LoginPageState extends State<LoginPage> {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Colors.blueAccent, Colors.blue], // Light blue gradient
+            colors: [Colors.blueAccent, Colors.lightBlue], // Light Blue Theme 🌊
           ),
         ),
         child: Center(
@@ -79,27 +81,37 @@ class _LoginPageState extends State<LoginPage> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                // 🎉 College Event Themed Animation
+                SizedBox(
+                  height: 180,
+                  child: Lottie.asset(
+                    'assets/college_event.json', // Use an animation with students celebrating at an event
+                  ),
+                ),
+                const SizedBox(height: 10),
+
+                // 👋 Welcome Message
                 const Text(
-                  "Welcome Back!",
+                  "Welcome back! New events await 🎉",
                   style: TextStyle(
-                    fontSize: 28,
+                    fontSize: 22,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
                 const Text(
-                  "Login to continue",
+                  "Explore. Engage. Enjoy! 🚀",
                   style: TextStyle(fontSize: 16, color: Colors.white70),
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 30),
 
-                // Glassmorphic Card
+                // 📅 Event-Themed Login Card
                 Container(
                   padding: const EdgeInsets.all(20),
                   margin: const EdgeInsets.symmetric(horizontal: 30),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9), // White background for light theme
+                    color: Colors.white.withOpacity(0.9),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(color: Colors.white.withOpacity(0.3)),
                     boxShadow: [
@@ -112,14 +124,15 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: Column(
                     children: [
+                      // 🎟️ Student ID (Event Ticket Icon)
                       TextField(
                         controller: _studentIdController,
                         decoration: InputDecoration(
                           labelText: 'Student ID',
-                          prefixIcon: Icon(Icons.person, color: Colors.blue),
-                          labelStyle: TextStyle(color: Colors.blue),
+                          prefixIcon: Icon(Icons.badge, color: Colors.blueAccent),
+                          labelStyle: TextStyle(color: Colors.blueAccent),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blueAccent),
+                            borderSide: BorderSide(color: Colors.lightBlueAccent),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -130,15 +143,30 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(color: Colors.black),
                       ),
                       const SizedBox(height: 15),
+
+                      // 🔒 Password Field with Toggle Visibility
                       TextField(
                         controller: _passwordController,
-                        obscureText: true,
+                        obscureText: !_isPasswordVisible,
                         decoration: InputDecoration(
                           labelText: 'Password',
-                          prefixIcon: Icon(Icons.lock, color: Colors.blue),
-                          labelStyle: TextStyle(color: Colors.blue),
+                          prefixIcon: Icon(Icons.lock, color: Colors.blueAccent),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _isPasswordVisible
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                              color: Colors.blueAccent,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _isPasswordVisible = !_isPasswordVisible;
+                              });
+                            },
+                          ),
+                          labelStyle: TextStyle(color: Colors.blueAccent),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.blueAccent),
+                            borderSide: BorderSide(color: Colors.lightBlueAccent),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           focusedBorder: OutlineInputBorder(
@@ -149,25 +177,28 @@ class _LoginPageState extends State<LoginPage> {
                         style: TextStyle(color: Colors.black),
                       ),
                       const SizedBox(height: 20),
-                      _isLoading
-                          ? const CircularProgressIndicator(color: Colors.blue)
-                          : ElevatedButton(
-                        onPressed: _login,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 40, vertical: 12),
-                          backgroundColor: Colors.blue,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+
+                      // 🔄 Loading Indicator
+                      if (_isLoading) const CircularProgressIndicator(color: Colors.blue),
+                      if (!_isLoading)
+                        ElevatedButton(
+                          onPressed: _login,
+                          style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 40, vertical: 12),
+                            backgroundColor: Colors.blueAccent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(fontSize: 18, color: Colors.white),
                           ),
                         ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                              fontSize: 18, color: Colors.white),
-                        ),
-                      ),
                       const SizedBox(height: 10),
+
+                      // 👤 Sign Up Option
                       TextButton(
                         onPressed: () async {
                           bool? signedUp = await Navigator.push(
