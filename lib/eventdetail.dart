@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'qr_scanner_page.dart';
+import 'feedback.dart'; // Ensure this file defines the FeedbackPage widget
 
 class EventDetailPage extends StatelessWidget {
   final bool isStudentCoordinator;
@@ -19,7 +20,7 @@ class EventDetailPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('TechX Conference 2025'),
         actions: [
-          if (true)//isStudentCoordinator
+          if (isStudentCoordinator)
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
               onPressed: () async {
@@ -120,6 +121,7 @@ class EventDetailPage extends StatelessWidget {
                         _buildBulletPoint('Respect all participants and speakers.'),
                         _buildBulletPoint('Follow the university guidelines for COVID-19 safety.'),
                         const SizedBox(height: 20),
+                        // Existing button for registration or other actions
                         ElevatedButton.icon(
                           onPressed: () {
                             String message;
@@ -130,12 +132,43 @@ class EventDetailPage extends StatelessWidget {
                             } else {
                               message = 'Downloading your certificate...';
                             }
-                            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(message)),
+                            );
                           },
-                          icon: Icon(!isRegistered ? Icons.event_available : isEventCompleted ? Icons.download : Icons.qr_code),
-                          label: Text(!isRegistered ? 'Register Now' : isEventCompleted ? 'Download Certificate' : 'Show QR Code'),
+                          icon: Icon(
+                            !isRegistered
+                                ? Icons.event_available
+                                : isEventCompleted
+                                ? Icons.download
+                                : Icons.qr_code,
+                          ),
+                          label: Text(
+                            !isRegistered
+                                ? 'Register Now'
+                                : isEventCompleted
+                                ? 'Download Certificate'
+                                : 'Show QR Code',
+                          ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.blue,
+                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        // New button for feedback (without using const constructor)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => FeedbackPage()),
+                            );
+                          },
+                          icon: const Icon(Icons.feedback),
+                          label: const Text('Feedback'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
                             padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           ),
