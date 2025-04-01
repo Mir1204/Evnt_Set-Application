@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart'; // For Date Formatting
+import 'package:evntset/services/auth_service.dart'; // Import your AuthService
 
 class SignUpPage extends StatefulWidget {
   @override
@@ -74,7 +75,7 @@ class _SignUpPageState extends State<SignUpPage> {
   }
 
   // Validate and Sign Up
-  void _signUp() {
+  void _signUp() async {
     String name = _nameController.text.trim();
     String email = _emailController.text.trim();
     String studentId = _studentIdController.text.trim();
@@ -92,11 +93,34 @@ class _SignUpPageState extends State<SignUpPage> {
       return;
     }
 
-    _showMessage("Signup successful!", color: Colors.green);
+    // Prepare the user data
+    Map<String, dynamic> userData = {
+      "name": name,
+      "email": email,
+      "Department":"DEPSTAR",
+      "username": studentId,
+      "password": password,
+      "mobile": mobile,
+      "Year": currentYear,
+      "Birthdate": DateFormat('yyyy-MM-dd').format(_selectedDate!),
+      "gender": _gender,
+      "residence": _residence,
+    };
 
-    Future.delayed(const Duration(seconds: 1), () {
-      Navigator.pop(context, true);
-    });
+    // Call the AuthService.signup method
+    final authService = AuthService();
+    final response = await authService.signup(userData);
+
+    if (response["success"] == true) {
+      _showMessage("Signup successful!", color: Colors.green);
+
+      // Navigate back after a delay
+      Future.delayed(const Duration(seconds: 1), () {
+        Navigator.pop(context, true);
+      });
+    } else {
+      _showMessage("Signup failed: ${response["error"]}");
+    }
   }
 
   @override

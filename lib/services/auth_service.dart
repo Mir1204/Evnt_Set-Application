@@ -63,7 +63,7 @@ class AuthService {
 
       final response = await client.post(
         Uri.parse("$apiUrl/register"),
-        headers: headers,
+        headers:headers,
         body: jsonEncode(userData),
       );
 
