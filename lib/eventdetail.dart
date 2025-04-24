@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'qr_scanner_page.dart';
-import 'feedback.dart'; // Ensure this file defines the FeedbackPage widget
+import 'feedback.dart';
+import 'qr_code_page.dart';
 
 class EventDetailPage extends StatelessWidget {
   final bool isStudentCoordinator;
@@ -16,25 +17,27 @@ class EventDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const double fontSize = 16.0; // Define a consistent font size
+    const FontWeight fontWeight = FontWeight.bold; // Define a consistent font weight
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('TechX Conference 2025'),
         actions: [
-          if (true)//isStudentCoordinator
-            IconButton(
-              icon: const Icon(Icons.qr_code_scanner),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const QRScannerPage()),
+          IconButton(
+            icon: const Icon(Icons.qr_code_scanner),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const QRScannerPage()),
+              );
+              if (result != null) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Processed ID: $result')),
                 );
-                if (result != null) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Processed ID: $result')),
-                  );
-                }
-              },
-            ),
+              }
+            },
+          ),
         ],
       ),
       body: DefaultTabController(
@@ -53,6 +56,7 @@ class EventDetailPage extends StatelessWidget {
             Expanded(
               child: TabBarView(
                 children: [
+                  // Details Tab
                   SingleChildScrollView(
                     padding: const EdgeInsets.all(16.0),
                     child: Column(
@@ -121,61 +125,79 @@ class EventDetailPage extends StatelessWidget {
                         _buildBulletPoint('Respect all participants and speakers.'),
                         _buildBulletPoint('Follow the university guidelines for COVID-19 safety.'),
                         const SizedBox(height: 20),
-                        // Existing button for registration or other actions
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            String message;
-                            if (!isRegistered) {
-                              message = 'You are now registered!';
-                            } else if (!isEventCompleted) {
-                              message = 'Showing your QR Code...';
-                            } else {
-                              message = 'Downloading your certificate...';
-                            }
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(message)),
-                            );
-                          },
-                          icon: Icon(
-                            !isRegistered
-                                ? Icons.event_available
-                                : isEventCompleted
-                                ? Icons.download
-                                : Icons.qr_code,
-                          ),
-                          label: Text(
-                            !isRegistered
-                                ? 'Register Now'
-                                : isEventCompleted
-                                ? 'Download Certificate'
-                                : 'Show QR Code',
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
+                        // Show QR Code Button
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => QRCodePage(data: 'Sample QR Data')),
+                              );
+                            },
+                            icon: const Icon(Icons.qr_code_2),
+                            label: const Text('Show QR Code'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green,
+                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              textStyle: TextStyle(fontSize: fontSize, fontWeight: fontWeight), // Standardized font size and weight
+                            ),
                           ),
                         ),
                         const SizedBox(height: 12),
-                        // New button for feedback (without using const constructor)
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => FeedbackPage()),
-                            );
-                          },
-                          icon: const Icon(Icons.feedback),
-                          label: const Text('Feedback'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          ),
+
+                        // Buttons Row (Moved up)
+                        Row(
+                          children: [
+                            if (!isEventCompleted)
+                              Expanded(
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        const SnackBar(content: Text('You are successfully registered!')),
+                                      );
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue,
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      textStyle: TextStyle(fontSize: fontSize, fontWeight: fontWeight), // Standardized font size and weight
+                                    ),
+                                    child: const Text('Register Now'),
+                                  ),
+                                ),
+                              ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                                child: ElevatedButton.icon(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (context) => FeedbackPage()),
+                                    );
+                                  },
+                                  icon: const Icon(Icons.feedback),
+                                  label: const Text('Feedback'),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.green,
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    textStyle: TextStyle(fontSize: fontSize, fontWeight: fontWeight), // Standardized font size and weight
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
+                  // Gallery Tab
                   GridView.builder(
                     padding: const EdgeInsets.all(16.0),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -205,7 +227,7 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildIconText(IconData icon, String title, String value) {
+  static Widget _buildIconText(IconData icon, String title, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
@@ -220,7 +242,7 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSpeakerTile(String name, String role) {
+  static Widget _buildSpeakerTile(String name, String role) {
     return ListTile(
       leading: const Icon(Icons.person_outline, color: Colors.blue),
       title: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -228,7 +250,7 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildScheduleTile(String time, String session) {
+  static Widget _buildScheduleTile(String time, String session) {
     return ListTile(
       leading: const Icon(Icons.schedule, color: Colors.blue),
       title: Text(time, style: const TextStyle(fontWeight: FontWeight.bold)),
@@ -236,7 +258,7 @@ class EventDetailPage extends StatelessWidget {
     );
   }
 
-  Widget _buildBulletPoint(String text) {
+  static Widget _buildBulletPoint(String text) {
     return Row(
       children: [
         const Icon(Icons.circle, size: 6, color: Colors.blue),
@@ -248,10 +270,11 @@ class EventDetailPage extends StatelessWidget {
 }
 
 void main() {
-  runApp(const MaterialApp(
+  runApp(MaterialApp(
+    debugShowCheckedModeBanner: false,
     home: EventDetailPage(
       isStudentCoordinator: true,
-      isRegistered: false,
+      isRegistered: true,
       isEventCompleted: false,
     ),
   ));
