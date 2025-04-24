@@ -20,7 +20,7 @@ class EventDetailPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('TechX Conference 2025'),
         actions: [
-          if (isStudentCoordinator)
+          if (true)//isStudentCoordinator
             IconButton(
               icon: const Icon(Icons.qr_code_scanner),
               onPressed: () async {

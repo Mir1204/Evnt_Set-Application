@@ -13,71 +13,92 @@ class _QRScannerPageState extends State<QRScannerPage> {
   final TextEditingController _manualIdController = TextEditingController();
   final MobileScannerController cameraController = MobileScannerController();
 
+  // Check Camera Permission
   Future<bool> _checkCameraPermission() async {
     final status = await Permission.camera.request();
     return status.isGranted;
   }
 
+  // Start QR Scanner with camera permission check
   void _startQRScanner() async {
     if (await _checkCameraPermission()) {
       Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (context) => Scaffold(
-            appBar: AppBar(
-              title: const Text('Scan QR Code'),
-              actions: [
-                IconButton(
-                  icon: Icon(
-                    cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off,
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => FadeTransition(
+            opacity: Tween(begin: 0.0, end: 1.0).animate(animation),
+            child: Scaffold(
+              appBar: AppBar(
+                title: const Text('Scan QR Code'),
+                elevation: 0,
+                actions: [
+                  IconButton(
+                    icon: Icon(
+                      cameraController.torchEnabled ? Icons.flash_on : Icons.flash_off,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        cameraController.toggleTorch();
+                      });
+                    },
                   ),
-                  onPressed: () {
-                    setState(() {
-                      cameraController.toggleTorch();
-                    });
-                  },
-                ),
-                IconButton(
-                  icon: const Icon(Icons.cameraswitch),
-                  onPressed: cameraController.switchCamera,
-                ),
-              ],
-            ),
-            body: MobileScanner(
-              controller: cameraController,
-              onDetect: (capture) {
-                final List<Barcode> barcodes = capture.barcodes;
-                if (barcodes.isNotEmpty) {
-                  final String code = barcodes.first.rawValue ?? '';
-                  if (code.isNotEmpty) {
-                    Navigator.pop(context, code);
+                  IconButton(
+                    icon: const Icon(Icons.cameraswitch, color: Colors.white),
+                    onPressed: () {
+                      setState(() {
+                        cameraController.switchCamera();
+                      });
+                    },
+                  ),
+                ],
+              ),
+              body: MobileScanner(
+                controller: cameraController,
+                onDetect: (capture) {
+                  final List<Barcode> barcodes = capture.barcodes;
+                  if (barcodes.isNotEmpty) {
+                    final String code = barcodes.first.rawValue ?? '';
+                    if (code.isNotEmpty) {
+                      Navigator.pop(context, code);
+                    }
                   }
-                }
-              },
+                },
+              ),
             ),
           ),
         ),
       ).then((value) {
         if (value != null) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Scanned: $value')),
+            SnackBar(
+              content: Text('Scanned: $value'),
+              backgroundColor: Colors.green, // Engaging green color for success
+            ),
           );
         }
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Camera permission denied')),
+        const SnackBar(
+          content: Text('Camera permission denied'),
+          backgroundColor: Colors.red, // Red color for error message
+        ),
       );
     }
   }
 
+  // Submit Manually Entered ID
   void _submitManualID() {
     String enteredId = _manualIdController.text.trim();
     if (enteredId.isNotEmpty) {
       Navigator.pop(context, enteredId);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid ID!')),
+        const SnackBar(
+          content: Text('Please enter a valid ID!'),
+          backgroundColor: Colors.orange, // Orange color for warning message
+        ),
       );
     }
   }
@@ -91,7 +112,9 @@ class _QRScannerPageState extends State<QRScannerPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Scan QR Code')),
+      appBar: AppBar(
+        title: const Text('QR Scanner'),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
         child: Column(
@@ -113,7 +136,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
               label: const Text('Start Scanning'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                backgroundColor: Colors.blue,
+                backgroundColor: Colors.blue, // Button color
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -145,7 +168,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
               label: const Text('Submit ID'),
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.green, // Button color for submission
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
