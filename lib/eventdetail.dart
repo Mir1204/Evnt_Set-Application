@@ -1,6 +1,7 @@
 import 'package:evntset/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 import 'qr_scanner_page.dart';
 import 'feedback.dart';
 import 'qr_code_page.dart';
@@ -25,7 +26,31 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
   Future<void> _checkRegistrationStatus() async {
     final prefs = await SharedPreferences.getInstance();
-    List<String> registeredEvents = prefs.getStringList('registeredEvents') ?? [];
+    final authService = AuthService();
+    final userData = await authService.getUserData();
+
+    if (userData == null) {
+      setState(() {
+        isRegistered = false;
+      });
+      return;
+    }
+
+    final currentUsername = userData['username'];
+    final storedUsername = prefs.getString('lastLoggedInUser');
+
+    // Reset registered events if a new user logs in
+    if (storedUsername != currentUsername) {
+      await prefs.setString('lastLoggedInUser', currentUsername);
+    }
+
+    // Retrieve user-specific registered events
+    final userEventsMap = prefs.getString('userEventsMap') ?? '{}';
+    final Map<String, List<String>> userEvents = Map<String, List<String>>.from(
+      (userEventsMap.isNotEmpty ? jsonDecode(userEventsMap) : {}),
+    );
+
+    final registeredEvents = userEvents[currentUsername] ?? [];
     setState(() {
       isRegistered = registeredEvents.contains(widget.eventData["eventName"]);
     });
@@ -52,11 +77,28 @@ class _EventDetailPageState extends State<EventDetailPage> {
         isRegistered = true;
       });
 
-      // Save the event as registered in shared preferences
+      // Save the event as registered for the current user
       final prefs = await SharedPreferences.getInstance();
-      List<String> registeredEvents = prefs.getStringList('registeredEvents') ?? [];
-      registeredEvents.add(widget.eventData["eventName"]);
-      await prefs.setStringList('registeredEvents', registeredEvents);
+      final userEventsMap = prefs.getString('userEventsMap') ?? '{}';
+      final Map<String, List<String>> userEvents = Map<String, List<String>>.from(
+        (userEventsMap.isNotEmpty ? jsonDecode(userEventsMap) : {}),
+      );
+
+      // Ensure only two users can register for the same event
+      final registeredUsers = userEvents.entries
+          .where((entry) => entry.value.contains(widget.eventData["eventName"]))
+          .map((entry) => entry.key)
+          .toList();
+
+      if (registeredUsers.length >= 2 && !registeredUsers.contains(username)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Only two users can register for this event from this device.')),
+        );
+        return;
+      }
+
+      userEvents[username] = (userEvents[username] ?? [])..add(widget.eventData["eventName"]);
+      await prefs.setString('userEventsMap', jsonEncode(userEvents));
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('You are successfully registered!')),
