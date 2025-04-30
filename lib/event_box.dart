@@ -43,10 +43,13 @@ class EventBox extends StatelessWidget {
                   topLeft: Radius.circular(12),
                   topRight: Radius.circular(12),
                 ),
-                child: Image.asset(
+                child: Image.network(
                   posterUrl,
                   width: double.infinity,
                   fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Center(child: Icon(Icons.broken_image, size: 50));
+                  },
                 ),
               ),
             ),

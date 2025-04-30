@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -60,7 +62,7 @@ class _QRScannerPageState extends State<QRScannerPage> {
                   if (barcodes.isNotEmpty) {
                     final String code = barcodes.first.rawValue ?? '';
                     if (code.isNotEmpty) {
-                      Navigator.pop(context, code);
+                      _onQRScan(code); // Process scanned QR code
                     }
                   }
                 },
@@ -84,6 +86,40 @@ class _QRScannerPageState extends State<QRScannerPage> {
           content: Text('Camera permission denied'),
           backgroundColor: Colors.red, // Red color for error message
         ),
+      );
+    }
+  }
+
+  void _onQRScan(String scannedData) {
+    var parts = scannedData.split(':');
+    if (parts.length == 2) {
+      var userId = parts[0];
+      var eventId = parts[1];
+      _verifyUserRegistration(userId, eventId);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Invalid QR Code'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _verifyUserRegistration(String userId, String eventId) async {
+    final response = await http.post(
+      Uri.parse('https://evntset-backend.onrender.com/api/verify_registration'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'userId': userId, 'eventId': eventId}),
+    );
+
+    if (response.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User Verified'), backgroundColor: Colors.green),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('User not registered'), backgroundColor: Colors.red),
       );
     }
   }

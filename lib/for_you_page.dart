@@ -28,58 +28,36 @@ class _ForYouPageState extends State<ForYouPage> {
   String? authToken;
   bool isLoading = true;
   List<Map<String, dynamic>> displayedEvents = [];
-  String? collegeName; // College derived from token
+  String? userDepartment;
 
   @override
   void initState() {
     super.initState();
-    _checkAuthStatus();
+    _initializeData();
   }
 
-  Future<void> _checkAuthStatus() async {
-    final authService = AuthService();
-    authToken = await authService.authtocken();
+  Future<void> _initializeData() async {
+    setState(() {
+      isLoading = true;
+    });
 
-    if (authToken == null) {
-      print("User is not logged in!");
-    } else {
-      print("User is logged in");
-      try {
-        // Decode token to get college
-        final decodedToken = _decodeToken(authToken!);
-        collegeName = decodedToken['college']; // Adjust key as per your token
-        _loadEvents();
-      } catch (e) {
-        print("Error decoding token: $e");
-        // Handle error (e.g., show message)
-      }
-    }
+    final authService = AuthService();
+    final department = await authService.getUserDepartment();
+    final savedEvents = await authService.getSavedEvents();
 
     setState(() {
+      userDepartment = department;
+      displayedEvents = _filterEvents(savedEvents ?? []);
       isLoading = false;
     });
   }
 
-  Map<String, dynamic> _decodeToken(String token) {
-    final parts = token.split('.');
-    if (parts.length != 3) {
-      throw Exception('Invalid token');
-    }
-    final payload = parts[1];
-    final normalized = base64Url.normalize(payload);
-    final decoded = utf8.decode(base64Url.decode(normalized));
-    return jsonDecode(decoded);
-  }
-
-  void _loadEvents() {
-    if (collegeName == null) return;
-
-    setState(() {
-      // Filter events by the user's college
-      displayedEvents = widget.events.where((event) {
-        return event["collegeName"] == collegeName;
-      }).toList();
-    });
+  List<Map<String, dynamic>> _filterEvents(List<dynamic> events) {
+    if (userDepartment == null) return [];
+    return events
+        .where((event) => event['idepartment'] == userDepartment)
+        .cast<Map<String, dynamic>>()
+        .toList();
   }
 
   @override
@@ -88,10 +66,10 @@ class _ForYouPageState extends State<ForYouPage> {
       return Center(child: CircularProgressIndicator());
     }
 
-    if (authToken == null) {
+    if (userDepartment == null) {
       return Center(
         child: Text(
-          "Please login/signup to view this section",
+          "Unable to load events. Please try again later.",
           style: TextStyle(fontSize: 18, color: Colors.red),
         ),
       );
@@ -107,32 +85,28 @@ class _ForYouPageState extends State<ForYouPage> {
         Expanded(
           child: displayedEvents.isNotEmpty
               ? EventSection(
-            title: "For You",
-            events: displayedEvents.map((event) => EventBox(
-              posterUrl: event["posterUrl"] ?? "assets/default_poster.png",
-              title: event["title"] ?? "Untitled Event",
-              dateTime: event["dateTime"] ?? "Date Not Available",
-              isRegistered: event["isRegistered"] ?? false,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EventDetailPage(
-                      isStudentCoordinator: event["isStudentCoordinator"] ?? false,
-                      isRegistered: event["isRegistered"] ?? false,
-                      isEventCompleted: event["isEventCompleted"] ?? false,
-                    ),
-                  ),
-                );
-              },
-            )).toList(),
-          )
+                  title: "For You",
+                  events: displayedEvents.map((event) => EventBox(
+                    posterUrl: event["posterUrl"] ?? "assets/default_poster.png",
+                    title: event["title"] ?? "Untitled Event",
+                    dateTime: event["dateTime"] ?? "Date Not Available",
+                    isRegistered: event["isRegistered"] ?? false,
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => EventDetailPage(eventData: event),
+                        ),
+                      );
+                    },
+                  )).toList(),
+                )
               : Center(
-            child: Text(
-              "No events available for your college.",
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-            ),
-          ),
+                  child: Text(
+                    "No events available for your department.",
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                ),
         ),
       ],
     );

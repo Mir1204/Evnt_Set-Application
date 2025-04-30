@@ -1,229 +1,239 @@
+import 'package:evntset/services/auth_service.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'qr_scanner_page.dart';
 import 'feedback.dart';
 import 'qr_code_page.dart';
 
-class EventDetailPage extends StatelessWidget {
-  final bool isStudentCoordinator;
-  final bool isRegistered;
-  final bool isEventCompleted;
+class EventDetailPage extends StatefulWidget {
+  final Map<String, dynamic> eventData;
 
-  const EventDetailPage({
-    Key? key,
-    required this.isStudentCoordinator,
-    required this.isRegistered,
-    required this.isEventCompleted,
-  }) : super(key: key);
+  const EventDetailPage({required this.eventData, Key? key}) : super(key: key);
+
+  @override
+  _EventDetailPageState createState() => _EventDetailPageState();
+}
+
+class _EventDetailPageState extends State<EventDetailPage> {
+  bool isRegistered = false;
+
+  Future<void> _registerForEvent() async {
+    // Simulate registration logic
+    setState(() {
+      isRegistered = true;
+    });
+
+    // Save the event as registered in shared preferences
+    final prefs = await SharedPreferences.getInstance();
+    List<String> registeredEvents = prefs.getStringList('registeredEvents') ?? [];
+    registeredEvents.add(widget.eventData["eventName"]);
+    await prefs.setStringList('registeredEvents', registeredEvents);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('You are successfully registered!')),
+    );
+  }
+
+  Future<void> _navigateToQRCodePage(BuildContext context, int eventId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final userId = prefs.getString('userId') ?? 'UnknownUser';
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QRCodePage( eventId: eventId),
+      ),
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> _getFilteredEvents() async {
+    final authService = AuthService();
+    final userDepartment = await authService.getUserDepartment();
+    final savedEvents = await authService.getSavedEvents();
+
+    if (userDepartment == null || savedEvents == null) {
+      return [];
+    }
+
+    return savedEvents
+        .where((event) => widget.eventData['idepartment'] == userDepartment)
+        .cast<Map<String, dynamic>>()
+        .toList();
+  }
 
   @override
   Widget build(BuildContext context) {
-    const double fontSize = 16.0; // Define a consistent font size
-    const FontWeight fontWeight = FontWeight.bold; // Define a consistent font weight
+    final authService = AuthService();
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('TechX Conference 2025'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const QRScannerPage()),
-              );
-              if (result != null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Processed ID: $result')),
-                );
-              }
-            },
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: authService.getUserData(),
+      builder: (context, snapshot) {
+        final userData = snapshot.data;
+        final isCoordinator = userData != null &&
+            (widget.eventData["coordinators"] as List<dynamic>)
+                .contains(userData["username"]);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(widget.eventData["eventName"] ?? "Event Details"),
+            actions: [
+              if (isCoordinator)
+                IconButton(
+                  icon: const Icon(Icons.qr_code_scanner),
+                  onPressed: () async {
+                    final result = await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const QRScannerPage()),
+                    );
+                    if (result != null) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Processed ID: $result')),
+                      );
+                    }
+                  },
+                ),
+            ],
           ),
-        ],
-      ),
-      body: DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            const TabBar(
-              indicatorColor: Colors.blue,
-              labelColor: Colors.blue,
-              unselectedLabelColor: Colors.grey,
-              tabs: [
-                Tab(text: 'Details', icon: Icon(Icons.info_outline)),
-                Tab(text: 'Gallery', icon: Icon(Icons.photo_library_outlined)),
-              ],
-            ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  // Details Tab
-                  SingleChildScrollView(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'TechX Conference 2025',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.asset(
-                            'assets/Event5.jpeg',
-                            width: double.infinity,
-                            height: 250,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        const Text(
-                          'Join us for an immersive experience in technology, innovation, and networking. '
-                              'Learn from industry experts, participate in hands-on workshops, and connect with like-minded individuals!',
-                          style: TextStyle(fontSize: 16, height: 1.5),
-                        ),
-                        const SizedBox(height: 20),
-                        const Divider(),
-                        const SizedBox(height: 10),
-                        _buildIconText(Icons.calendar_today, 'Date & Time', '10th February 2025, 10:00 AM - 5:00 PM'),
-                        _buildIconText(Icons.location_on, 'Venue', '229 Seminar Hall, DEPSTAR'),
-                        const SizedBox(height: 20),
-                        _buildIconText(Icons.person, 'Organizer', 'Rudra Patel'),
-                        _buildIconText(Icons.phone, 'Contact', '8884883483'),
-                        const SizedBox(height: 20),
-                        const Divider(),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Keynote Speakers',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildSpeakerTile('Dr. A.P. Sharma', 'AI Researcher, Google'),
-                        _buildSpeakerTile('Neha Mehta', 'Blockchain Expert, Ethereum Foundation'),
-                        const SizedBox(height: 20),
-                        const Divider(),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Schedule',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 10),
-                        _buildScheduleTile('10:00 AM', 'Opening Ceremony'),
-                        _buildScheduleTile('11:00 AM', 'AI & Future Tech - Dr. A.P. Sharma'),
-                        _buildScheduleTile('02:00 PM', 'Blockchain Innovations - Neha Mehta'),
-                        _buildScheduleTile('04:00 PM', 'Panel Discussion & Networking'),
-                        const SizedBox(height: 20),
-                        const Divider(),
-                        const SizedBox(height: 10),
-                        const Text(
-                          'Event Rules & Guidelines',
-                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        const SizedBox(height: 8),
-                        _buildBulletPoint('Arrive at least 15 minutes before the session.'),
-                        _buildBulletPoint('Carry a valid ID for entry.'),
-                        _buildBulletPoint('Respect all participants and speakers.'),
-                        _buildBulletPoint('Follow the university guidelines for COVID-19 safety.'),
-                        const SizedBox(height: 20),
-
-                        // Show QR Code Button
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton.icon(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (context) => QRCodePage(data: 'Sample QR Data')),
-                              );
-                            },
-                            icon: const Icon(Icons.qr_code_2),
-                            label: const Text('Show QR Code'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              textStyle: TextStyle(fontSize: fontSize, fontWeight: fontWeight), // Standardized font size and weight
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-
-                        // Buttons Row (Moved up)
-                        Row(
+          body: DefaultTabController(
+            length: 2,
+            child: Column(
+              children: [
+                const TabBar(
+                  indicatorColor: Colors.blue,
+                  labelColor: Colors.blue,
+                  unselectedLabelColor: Colors.grey,
+                  tabs: [
+                    Tab(text: 'Details', icon: Icon(Icons.info_outline)),
+                    Tab(text: 'Gallery', icon: Icon(Icons.photo_library_outlined)),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            if (!isEventCompleted)
-                              Expanded(
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                                  child: ElevatedButton(
-                                    onPressed: () {
-                                      ScaffoldMessenger.of(context).showSnackBar(
-                                        const SnackBar(content: Text('You are successfully registered!')),
-                                      );
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      padding: const EdgeInsets.symmetric(vertical: 14),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                      textStyle: TextStyle(fontSize: fontSize, fontWeight: fontWeight), // Standardized font size and weight
+                            Text(
+                              "Name: ${widget.eventData}",
+                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 10),
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(12),
+                              child: Image.network(
+                                widget.eventData["posterUrl"] ?? '',
+                                height: 200,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            const SizedBox(height: 15),
+                            Text(
+                              "Description:\n${widget.eventData["description"]}",
+                              style: const TextStyle(fontSize: 16, height: 1.5),
+                            ),
+                            const SizedBox(height: 20),
+                            const Divider(),
+                            const SizedBox(height: 10),
+                            _buildIconText(Icons.calendar_today, 'Date', widget.eventData["date"] ?? "N/A"),
+                            _buildIconText(Icons.access_time, 'Time', widget.eventData["time"] ?? "N/A"),
+                            _buildIconText(Icons.location_on, 'Venue', widget.eventData["venue"] ?? "N/A"),
+                            const SizedBox(height: 20),
+                            const Divider(),
+                            const SizedBox(height: 10),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                                    child: ElevatedButton(
+                                      onPressed: isRegistered ? null : _registerForEvent,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: isRegistered ? Colors.grey : Colors.blue,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                      child: Text(isRegistered ? 'Registered' : 'Register Now'),
                                     ),
-                                    child: const Text('Register Now'),
                                   ),
                                 ),
-                              ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
-                                child: ElevatedButton.icon(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(builder: (context) => FeedbackPage()),
-                                    );
-                                  },
-                                  icon: const Icon(Icons.feedback),
-                                  label: const Text('Feedback'),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.green,
-                                    padding: const EdgeInsets.symmetric(vertical: 14),
-                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                    textStyle: TextStyle(fontSize: fontSize, fontWeight: fontWeight), // Standardized font size and weight
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                                    child: ElevatedButton.icon(
+                                      onPressed: isRegistered && (widget.eventData["eventId"] != null)
+                                          ? () => _navigateToQRCodePage(context, widget.eventData["eventId"] as int)
+                                          : null,
+                                      icon: const Icon(Icons.qr_code_2),
+                                      label: const Text('Show QR Code'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: isRegistered ? Colors.green : Colors.grey,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 8.0),
+                                    child: ElevatedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => FeedbackPage()),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.feedback),
+                                      label: const Text('Feedback'),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.green,
+                                        padding: const EdgeInsets.symmetric(vertical: 14),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
-                      ],
-                    ),
-                  ),
-                  // Gallery Tab
-                  GridView.builder(
-                    padding: const EdgeInsets.all(16.0),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
-                    itemCount: 6,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        decoration: BoxDecoration(
-                          color: Colors.grey[300],
-                          borderRadius: BorderRadius.circular(8),
+                      ),
+                      // Gallery Tab
+                      GridView.builder(
+                        padding: const EdgeInsets.all(16.0),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 10,
+                          mainAxisSpacing: 10,
                         ),
-                        child: Center(
-                          child: Text('Photo/Video ${index + 1}', style: const TextStyle(color: Colors.black54)),
-                        ),
-                      );
-                    },
+                        itemCount: 6,
+                        itemBuilder: (context, index) {
+                          return Container(
+                            decoration: BoxDecoration(
+                              color: Colors.grey[300],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Center(
+                              child: Text('Photo/Video ${index + 1}',
+                                  style: const TextStyle(color: Colors.black54)),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -241,41 +251,5 @@ class EventDetailPage extends StatelessWidget {
       ),
     );
   }
-
-  static Widget _buildSpeakerTile(String name, String role) {
-    return ListTile(
-      leading: const Icon(Icons.person_outline, color: Colors.blue),
-      title: Text(name, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      subtitle: Text(role, style: const TextStyle(fontSize: 14, color: Colors.grey)),
-    );
-  }
-
-  static Widget _buildScheduleTile(String time, String session) {
-    return ListTile(
-      leading: const Icon(Icons.schedule, color: Colors.blue),
-      title: Text(time, style: const TextStyle(fontWeight: FontWeight.bold)),
-      subtitle: Text(session),
-    );
-  }
-
-  static Widget _buildBulletPoint(String text) {
-    return Row(
-      children: [
-        const Icon(Icons.circle, size: 6, color: Colors.blue),
-        const SizedBox(width: 6),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 16))),
-      ],
-    );
-  }
 }
 
-void main() {
-  runApp(MaterialApp(
-    debugShowCheckedModeBanner: false,
-    home: EventDetailPage(
-      isStudentCoordinator: true,
-      isRegistered: true,
-      isEventCompleted: false,
-    ),
-  ));
-}
