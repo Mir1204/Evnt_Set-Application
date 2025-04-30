@@ -17,20 +17,55 @@ class EventDetailPage extends StatefulWidget {
 class _EventDetailPageState extends State<EventDetailPage> {
   bool isRegistered = false;
 
-  Future<void> _registerForEvent() async {
-    setState(() {
-      isRegistered = true;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _checkRegistrationStatus();
+  }
 
-    // Save the event as registered in shared preferences
+  Future<void> _checkRegistrationStatus() async {
     final prefs = await SharedPreferences.getInstance();
     List<String> registeredEvents = prefs.getStringList('registeredEvents') ?? [];
-    registeredEvents.add(widget.eventData["eventName"]);
-    await prefs.setStringList('registeredEvents', registeredEvents);
+    setState(() {
+      isRegistered = registeredEvents.contains(widget.eventData["eventName"]);
+    });
+  }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('You are successfully registered!')),
-    );
+  Future<void> _registerForEvent() async {
+    final authService = AuthService();
+    final userData = await authService.getUserData();
+
+    if (userData == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch user data.')),
+      );
+      return;
+    }
+
+    final username = userData['username'];
+    final eventId = widget.eventData["eventId"] as int;
+
+    final response = await authService.registerForEvent(username, eventId, false);
+
+    if (response["success"] == true) {
+      setState(() {
+        isRegistered = true;
+      });
+
+      // Save the event as registered in shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      List<String> registeredEvents = prefs.getStringList('registeredEvents') ?? [];
+      registeredEvents.add(widget.eventData["eventName"]);
+      await prefs.setStringList('registeredEvents', registeredEvents);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('You are successfully registered!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Registration failed: ${response["error"]}')),
+      );
+    }
   }
 
   Future<void> _navigateToQRCodePage(BuildContext context, int eventId) async {

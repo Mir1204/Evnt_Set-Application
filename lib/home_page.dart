@@ -173,7 +173,9 @@ class _HomePageState extends State<HomePage> {
           break;
 
         case 2:
-          bodyContent = _isAuthenticated ? RegisteredEventsSection() : _buildUnauthorizedMessage();
+          bodyContent = _isAuthenticated
+              ? RegisteredEventsSection(allEvents: allEvents.cast<Map<String, dynamic>>())
+              : _buildUnauthorizedMessage();
           break;
 
         case 3:

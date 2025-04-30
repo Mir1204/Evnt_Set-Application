@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'event_box.dart';
 import 'eventdetail.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'qr_code_page.dart';
 
 class RegisteredEventsSection extends StatefulWidget {
+  final List<Map<String, dynamic>> allEvents;
+
+  const RegisteredEventsSection({required this.allEvents, Key? key}) : super(key: key);
+
   @override
   _RegisteredEventsSectionState createState() => _RegisteredEventsSectionState();
 }
 
 class _RegisteredEventsSectionState extends State<RegisteredEventsSection> {
-  List<String> registeredEvents = [];
+  List<String> registeredEventNames = [];
 
   @override
   void initState() {
@@ -20,44 +25,53 @@ class _RegisteredEventsSectionState extends State<RegisteredEventsSection> {
   Future<void> _loadRegisteredEvents() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      registeredEvents = prefs.getStringList('registeredEvents') ?? [];
+      registeredEventNames = prefs.getStringList('registeredEvents') ?? [];
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(8.0),
-      children: [
-        const Text(
-          "Registered Events",
-          style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 10),
-        ...registeredEvents.map((eventName) => EventBox(
-              posterUrl: "assets/event_placeholder.jpg", // Placeholder image
-              title: eventName,
-              dateTime: "TBD", // Placeholder date/time
-              isRegistered: true,
-              onTap: () {
-                // Navigate to EventDetailPage with dummy data
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EventDetailPage(
-                      eventData: {
-                        "eventName": eventName,
-                        "posterUrl": "assets/event_placeholder.jpg",
-                        "date": "TBD",
-                        "time": "TBD",
-                        "description": "Event details not available.",
-                      },
-                    ),
-                  ),
+    final registeredEvents = widget.allEvents
+        .where((event) => registeredEventNames.contains(event["eventName"]))
+        .toList();
+
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Registered Events"),
+        backgroundColor: Colors.blueAccent,
+      ),
+      body: registeredEvents.isEmpty
+          ? const Center(child: Text("No registered events found."))
+          : ListView.builder(
+              itemCount: registeredEvents.length,
+              itemBuilder: (context, index) {
+                final event = registeredEvents[index];
+                return EventBox(
+                  posterUrl: event["posterUrl"] ?? '',
+                  title: event["eventName"] ?? '',
+                  dateTime: "${event["date"]} - ${event["time"]}",
+                  isRegistered: true,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => EventDetailPage(eventData: event),
+                      ),
+                    );
+                  },
+                  showQRButton: true,
+                  onShowQR: () {
+                    // Navigate to QR Code Page
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => QRCodePage(eventId: event["eventId"]),
+                      ),
+                    );
+                  },
                 );
               },
-            )),
-      ],
+            ),
     );
   }
 }

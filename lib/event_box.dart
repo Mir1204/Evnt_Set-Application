@@ -6,6 +6,8 @@ class EventBox extends StatelessWidget {
   final String dateTime;
   final bool isRegistered;
   final VoidCallback onTap;
+  final bool showQRButton;
+  final VoidCallback? onShowQR;
 
   const EventBox({
     Key? key,
@@ -14,6 +16,8 @@ class EventBox extends StatelessWidget {
     required this.dateTime,
     required this.isRegistered,
     required this.onTap,
+    this.showQRButton = false,
+    this.onShowQR,
   }) : super(key: key);
 
   @override
@@ -82,6 +86,15 @@ class EventBox extends StatelessWidget {
                       child: Text(isRegistered ? "Show QR Code" : "Register Now"),
                     ),
                   ),
+                  if (showQRButton && onShowQR != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: onShowQR,
+                        icon: const Icon(Icons.qr_code_2, color: Colors.blue),
+                        label: const Text("Show QR Code", style: TextStyle(color: Colors.blue)),
+                      ),
+                    ),
                 ],
               ),
             ),

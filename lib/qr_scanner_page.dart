@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
+import './services/auth_service.dart';
 
 class QRScannerPage extends StatefulWidget {
   const QRScannerPage({Key? key}) : super(key: key);
@@ -14,6 +15,8 @@ class QRScannerPage extends StatefulWidget {
 class _QRScannerPageState extends State<QRScannerPage> {
   final TextEditingController _manualIdController = TextEditingController();
   final MobileScannerController cameraController = MobileScannerController();
+  final AuthService authService = AuthService(); // Initialize AuthService
+  bool _messageDisplayed = false; // Flag to track message display
 
   // Check Camera Permission
   Future<bool> _checkCameraPermission() async {
@@ -91,11 +94,14 @@ class _QRScannerPageState extends State<QRScannerPage> {
   }
 
   void _onQRScan(String scannedData) {
-    var parts = scannedData.split(':');
-    if (parts.length == 2) {
-      var userId = parts[0];
-      var eventId = parts[1];
-      _verifyUserRegistration(userId, eventId);
+    // Validate QR code format: usernamexxeventId (case-insensitive)
+    final regex = RegExp(r'^(.+?)xx(\d+)$', caseSensitive: false);
+    final match = regex.firstMatch(scannedData);
+
+    if (match != null) {
+      final username = match.group(1)!.toUpperCase(); // Ensure username is uppercase
+      final eventId = int.parse(match.group(2)!);
+      _registerForEvent(username, eventId); // Call AuthService to register
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -106,22 +112,34 @@ class _QRScannerPageState extends State<QRScannerPage> {
     }
   }
 
-  Future<void> _verifyUserRegistration(String userId, String eventId) async {
-    final response = await http.post(
-      Uri.parse('https://evntset-backend.onrender.com/api/verify_registration'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'userId': userId, 'eventId': eventId}),
-    );
+  Future<void> _registerForEvent(String username, int eventId) async {
+    if (_messageDisplayed) return; // Prevent duplicate messages
 
-    if (response.statusCode == 200) {
+    _messageDisplayed = true; // Set flag to true to indicate a message is being displayed
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    final result = await authService.registerForEvent(username, eventId, true);
+
+    if (result['success'] == true) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User Verified'), backgroundColor: Colors.green),
+        SnackBar(
+          content: Text('User $username Registered Successfully'),
+          backgroundColor: Colors.green,
+        ),
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('User not registered'), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('Registration Failed: ${result['error']}'),
+          backgroundColor: Colors.red,
+        ),
       );
     }
+
+    // Reset the flag after a short delay to allow new messages
+    Future.delayed(const Duration(seconds: 3), () {
+      _messageDisplayed = false;
+    });
   }
 
   // Submit Manually Entered ID

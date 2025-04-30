@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final String apiUrl = "https://evntset-backend.onrender.com/api";
-  // final String apiUrl = "http://192.168.237.26:5000/api/auth"; // Update based on your environment
+  // final String apiUrl = "http://100.116.131.0:5000/api"; // Update based on your environment
   final String apiKey = "Jay9101620"; // Replace with actual key
 
   HttpClient createHttpClient() {
@@ -152,6 +152,37 @@ class AuthService {
       return jsonDecode(eventsData);
     }
     return null;
+  }
+
+  Map<String, dynamic>? tempEventRegistrationData;
+
+  Future<Map<String, dynamic>> registerForEvent(String username, int eventId, bool attendance) async {
+    try {
+      final client = await getClient();
+      final headers = await _getHeaders();
+
+      final response = await client.post(
+        Uri.parse("https://evntset-backend.onrender.com/eventreg"),
+        headers: headers,
+        body: jsonEncode({
+          "Username": username,
+          "eventId": eventId.toString(),
+          "Attendance": attendance,
+        }),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        tempEventRegistrationData = data; // Save in temporary memory
+        return {"success": true, "data": data};
+      }
+      return {
+        "success": false,
+        "error": "${response.statusCode}: ${response.body}"
+      };
+    } catch (e) {
+      return {"success": false, "error": "Event registration failed: ${e.toString()}"};
+    }
   }
 
 }
