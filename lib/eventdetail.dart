@@ -18,7 +18,6 @@ class _EventDetailPageState extends State<EventDetailPage> {
   bool isRegistered = false;
 
   Future<void> _registerForEvent() async {
-    // Simulate registration logic
     setState(() {
       isRegistered = true;
     });
@@ -40,7 +39,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => QRCodePage( eventId: eventId),
+        builder: (context) => QRCodePage(eventId: eventId),
       ),
     );
   }
@@ -74,7 +73,11 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
         return Scaffold(
           appBar: AppBar(
-            title: Text(widget.eventData["eventName"] ?? "Event Details"),
+            backgroundColor: Colors.blueAccent,
+            title: Text(
+              widget.eventData["eventName"] ?? "Event Details",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             actions: [
               if (isCoordinator)
                 IconButton(
@@ -110,38 +113,49 @@ class _EventDetailPageState extends State<EventDetailPage> {
                 Expanded(
                   child: TabBarView(
                     children: [
+                      // Event Details Tab
                       SingleChildScrollView(
                         padding: const EdgeInsets.all(16.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            // Event Name
                             Text(
-                              "Name: ${widget.eventData}",
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              widget.eventData["eventName"] ?? 'N/A',
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueAccent,
+                              ),
                             ),
                             const SizedBox(height: 10),
+                            // Event Poster (Full width, with height adjusted for better fit)
                             ClipRRect(
                               borderRadius: BorderRadius.circular(12),
                               child: Image.network(
                                 widget.eventData["posterUrl"] ?? '',
-                                height: 200,
+                                width: double.infinity, // Full width
+                                height: MediaQuery.of(context).size.height * 0.35, // Adjusted height
                                 fit: BoxFit.cover,
                               ),
                             ),
                             const SizedBox(height: 15),
+                            // Event Description
                             Text(
-                              "Description:\n${widget.eventData["description"]}",
+                              "Description:\n${widget.eventData["description"] ?? 'No description available'}",
                               style: const TextStyle(fontSize: 16, height: 1.5),
                             ),
                             const SizedBox(height: 20),
                             const Divider(),
                             const SizedBox(height: 10),
+                            // Event Details: Date, Time, Venue
                             _buildIconText(Icons.calendar_today, 'Date', widget.eventData["date"] ?? "N/A"),
                             _buildIconText(Icons.access_time, 'Time', widget.eventData["time"] ?? "N/A"),
                             _buildIconText(Icons.location_on, 'Venue', widget.eventData["venue"] ?? "N/A"),
                             const SizedBox(height: 20),
                             const Divider(),
                             const SizedBox(height: 10),
+                            // Register Button and QR Code Button
                             Row(
                               children: [
                                 Expanded(
@@ -150,7 +164,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                     child: ElevatedButton(
                                       onPressed: isRegistered ? null : _registerForEvent,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: isRegistered ? Colors.grey : Colors.blue,
+                                        backgroundColor: isRegistered ? Colors.grey : Colors.blueAccent,
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
@@ -177,6 +191,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                 ),
                               ],
                             ),
+                            // Feedback Button
                             Row(
                               children: [
                                 Expanded(
@@ -242,7 +257,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
       padding: const EdgeInsets.only(bottom: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: Colors.blue),
+          Icon(icon, color: Colors.blueAccent),
           const SizedBox(width: 10),
           Expanded(
             child: Text('$title: $value', style: const TextStyle(fontSize: 16)),
@@ -252,4 +267,3 @@ class _EventDetailPageState extends State<EventDetailPage> {
     );
   }
 }
-

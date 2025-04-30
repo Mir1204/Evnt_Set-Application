@@ -1,10 +1,10 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'editprofile.dart'; // Ensure this file exists and exports EditProfileScreen
+import 'package:image_picker/image_picker.dart';
 import 'package:evntset/services/auth_service.dart';
-import 'package:http/http.dart' as http; // Adjust import path
+import 'package:http/http.dart' as http;
 import 'package:http/io_client.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 void main() {
   runApp(MyApp());
@@ -18,8 +18,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
         fontFamily: 'Roboto',
-        textTheme: TextTheme(
-          // Using titleLarge and bodyMedium for newer versions
+        textTheme: const TextTheme(
           titleLarge: TextStyle(
             fontSize: 36,
             fontWeight: FontWeight.bold,
@@ -33,7 +32,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: ProfileScreen(),
+      home: const ProfileScreen(),
     );
   }
 }
@@ -61,9 +60,13 @@ class _ProfileScreenState extends State<ProfileScreen>
   bool isLoading = true;
   String? errorMessage;
 
+  late AnimationController _animationController;
+  late Animation<double> _cardAnimation;
+
+  final ImagePicker _picker = ImagePicker();
+
   @override
   void initState() {
-
     super.initState();
     _animationController = AnimationController(
       vsync: this,
@@ -75,63 +78,79 @@ class _ProfileScreenState extends State<ProfileScreen>
     );
     _animationController.forward();
     _fetchProfile();
+    _loadProfileImage(); // Load the saved image path
   }
 
- 
-Future<http.Client> createHttpClient() async {
-  HttpClient client = HttpClient();
-  
-  // ✅ Allow self-signed certificates
-  client.badCertificateCallback = (X509Certificate cert, String host, int port) => true;
-  
-  return IOClient(client);
-}
+  Future<http.Client> createHttpClient() async {
+    HttpClient client = HttpClient();
+    client.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
+    return IOClient(client);
+  }
 
-Future<void> _fetchProfile() async {
-  try {
-    final authService = AuthService();
-    final token = await authService.authtocken();
-    if (token == null) {
-      setState(() {
-        errorMessage = "User not authenticated";
-        isLoading = false;
-      });
-      return;
-    }
+  Future<void> _fetchProfile() async {
+    try {
+      final authService = AuthService();
+      final token = await authService.authtocken();
+      if (token == null) {
+        setState(() {
+          errorMessage = "User not authenticated";
+          isLoading = false;
+        });
+        return;
+      }
 
-    // Fetch user data from SharedPreferences
-    final userData = await authService.getUserData();
-    if (userData != null) {
+      final userData = await authService.getUserData();
+      if (userData != null) {
+        setState(() {
+          name = userData['name'];
+          id = userData['username'];
+          gender = userData['gender'];
+          mobile = userData['mobile'];
+          department = userData['department'];
+          dob = userData['birthdate'];
+          email = userData['email'];
+          studentType = userData['residence'];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          errorMessage = "Failed to load profile data";
+          isLoading = false;
+        });
+      }
+    } catch (e) {
       setState(() {
-        name = userData['name'];
-        id = userData['username'];
-        gender = userData['gender'];
-        mobile = userData['mobile'];
-        department = userData['department'];
-        dob = userData['birthdate'];
-        email = userData['email'];
-        studentType = userData['residence'];
-        profileImagePath = userData['profileImagePath'];
-        isLoading = false;
-      });
-    } else {
-      setState(() {
-        errorMessage = "Failed to load profile data";
+        errorMessage = "Error: ${e.toString()}";
         isLoading = false;
       });
     }
-  } catch (e) {
+  }
+
+  // Load the profile image path from SharedPreferences
+  Future<void> _loadProfileImage() async {
+    final prefs = await SharedPreferences.getInstance();
     setState(() {
-      errorMessage = "Error: ${e.toString()}";
-      isLoading = false;
+      profileImagePath = prefs.getString('profileImagePath');
     });
   }
-}
 
-  late AnimationController _animationController;
-  late Animation<double> _cardAnimation;
+  // Save the profile image path to SharedPreferences
+  Future<void> _saveProfileImage(String imagePath) async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('profileImagePath', imagePath);
+  }
 
-
+  Future<void> _pickImage() async {
+    final XFile? pickedFile =
+    await _picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        profileImagePath = pickedFile.path;
+      });
+      _saveProfileImage(pickedFile.path); // Save the new image path
+    }
+  }
 
   @override
   void dispose() {
@@ -143,66 +162,57 @@ Future<void> _fetchProfile() async {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: Container(
-        width: double.infinity,
-        height: double.infinity,
-        child: SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: MediaQuery.of(context).size.height,
-            ),
-            child: Column(
-              children: [
-                // Header and profile picture container.
-                Container(
-                  height: 300,
-                  child: Stack(
-                    children: [
-                      _buildHeader(),
-                      Positioned(
-                        top: 150,
-                        left: 0,
-                        right: 0,
-                        child: _buildProfilePicture()
-                        ,
-                      ),
-                    ],
-                  ),
+      body: SingleChildScrollView(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: MediaQuery.of(context).size.height,
+          ),
+          child: Column(
+            children: [
+              Container(
+                height: 300,
+                child: Stack(
+                  children: [
+                    _buildHeader(),
+                    Positioned(
+                      top: 150,
+                      left: 0,
+                      right: 0,
+                      child: _buildProfilePicture(),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 20),
-                // Animated profile details card.
-                SlideTransition(
-                  position: Tween<Offset>(
-                    begin: const Offset(0, 0.1),
-                    end: Offset.zero,
-                  ).animate(_cardAnimation),
-                  child: FadeTransition(
-                    opacity: _cardAnimation,
-                    child: _buildProfileCard(),
-                  ),
+              ),
+              const SizedBox(height: 20),
+              SlideTransition(
+                position: Tween<Offset>(
+                    begin: const Offset(0, 0.1), end: Offset.zero)
+                    .animate(_cardAnimation),
+                child: FadeTransition(
+                  opacity: _cardAnimation,
+                  child: _buildProfileCard(),
                 ),
-                const SizedBox(height: 20),
-              ],
-            ),
+              ),
+              const SizedBox(height: 20),
+            ],
           ),
         ),
       ),
     );
   }
 
-  /// A more beautiful header with a wavy bottom edge, decorative shapes, and modern typography.
   Widget _buildHeader() {
     return ClipPath(
       clipper: WaveClipper(),
       child: Container(
         height: 250,
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
             colors: [Colors.blueAccent, Colors.blue],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          boxShadow: const [
+          boxShadow: [
             BoxShadow(
               color: Colors.black26,
               blurRadius: 10,
@@ -210,145 +220,107 @@ Future<void> _fetchProfile() async {
             ),
           ],
         ),
-        child: Stack(
-          children: [
-            // Large decorative circle in the top-right.
-            Positioned(
-              top: -40,
-              right: -40,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.2),
-                ),
-              ),
+        child: Align(
+          alignment: Alignment.center,
+          child: Text(
+            "My Profile",
+            style: Theme.of(context).textTheme.titleLarge!.copyWith(
+              fontSize: 42,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.5,
             ),
-            // Smaller decorative circle in the top-left.
-            Positioned(
-              top: 50,
-              left: -30,
-              child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.15),
-                ),
-              ),
-            ),
-            // A rotated square for extra flair.
-            Positioned(
-              bottom: 30,
-              right: 20,
-              child: Transform.rotate(
-                angle: 0.3,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                ),
-              ),
-            ),
-            // Centered header title.
-            Align(
-              alignment: Alignment.center,
-              child: Text(
-                "My Profile",
-                style: Theme.of(context).textTheme.titleLarge!.copyWith(
-                  fontSize: 42,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 1.5,
-                ),
-              ),
-            ),
-            // Edit button in the top-right corner.
-            Positioned(
-              top: 40,
-              right: 20,
-              child: _buildEditButton(),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 
-
-  /// Circular profile picture with a white border and subtle shadow.
   Widget _buildProfilePicture() {
     return Center(
-      child: Container(
-        width: 150,
-        height: 150,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 4),
-          boxShadow: const [
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 10,
-              offset: Offset(0, 5),
+      child: GestureDetector(
+        onTap: _pickImage,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            Container(
+              width: 150,
+              height: 150,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: Colors.white, width: 4),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: CircleAvatar(
+                backgroundImage: profileImagePath != null
+                    ? FileImage(File(profileImagePath!))
+                    : const AssetImage("assets/logo.jpg") as ImageProvider,
+              ),
+            ),
+            const Positioned(
+              bottom: 10,
+              right: 10,
+              child: Icon(
+                Icons.camera_alt,
+                color: Colors.white,
+                size: 30,
+              ),
             ),
           ],
-        ),
-        child: CircleAvatar(
-          backgroundImage: profileImagePath != null
-              ? FileImage(File(profileImagePath!))
-              : const AssetImage("assets/logo.jpg") as ImageProvider,
         ),
       ),
     );
   }
 
-  /// Card containing all profile details.
   Widget _buildProfileCard() {
-  if (isLoading) {
-    return Center(child: CircularProgressIndicator());
-  }
-  if (errorMessage != null) {
-    return Center(child: Text(errorMessage!, style: TextStyle(color: Colors.red)));
-  }
+    if (isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (errorMessage != null) {
+      return Center(
+        child: Text(errorMessage!, style: const TextStyle(color: Colors.red)),
+      );
+    }
 
-  return Padding(
-    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
-    child: Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            _buildProfileItem(Icons.person_outline, "Name", name),
-            _buildDivider(),
-            _buildProfileItem(Icons.badge_outlined, "ID", id),
-            _buildDivider(),
-            _buildProfileItem(Icons.person, "Gender", gender),
-            _buildDivider(),
-            _buildProfileItem(Icons.phone, "Mobile", mobile),
-            _buildDivider(),
-            _buildProfileItem(Icons.school, "Department", department),
-            _buildDivider(),
-            _buildProfileItem(Icons.calendar_today, "DOB", dob),
-            _buildDivider(),
-            _buildProfileItem(Icons.email_outlined, "Email", email),
-            _buildDivider(),
-            _buildProfileItem(Icons.category, "Student Type", studentType),
-          ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: Card(
+        elevation: 8,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              _buildProfileItem(Icons.person_outline, "Name", name),
+              _buildDivider(),
+              _buildProfileItem(Icons.badge_outlined, "ID", id),
+              _buildDivider(),
+              _buildProfileItem(Icons.person, "Gender", gender),
+              _buildDivider(),
+              _buildProfileItem(Icons.phone, "Mobile", mobile),
+              _buildDivider(),
+              _buildProfileItem(Icons.school, "Department", department),
+              _buildDivider(),
+              _buildProfileItem(Icons.calendar_today, "DOB", dob),
+              _buildDivider(),
+              _buildProfileItem(Icons.email_outlined, "Email", email),
+              _buildDivider(),
+              _buildProfileItem(Icons.category, "Student Type", studentType),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
-
-  /// A profile detail row with an icon, label, and value.
   Widget _buildProfileItem(IconData icon, String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
@@ -383,7 +355,6 @@ Future<void> _fetchProfile() async {
     );
   }
 
-  /// A subtle divider between profile items.
   Widget _buildDivider() {
     return Divider(
       height: 20,
@@ -391,82 +362,21 @@ Future<void> _fetchProfile() async {
       thickness: 1,
     );
   }
-
-  /// An edit button that navigates to the EditProfileScreen.
-  Widget _buildEditButton() {
-    return InkWell(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => EditProfileScreen(
-              userData: {
-                "name": name,
-                "id": id,
-                "gender": gender,
-                "mobile": mobile,
-                "department": department,
-                "dob": dob,
-                "email": email,
-                "studentType": studentType,
-                "profileImagePath": profileImagePath,
-              },
-            ),
-          ),
-        ).then((updatedData) {
-          if (updatedData != null) {
-            setState(() {
-              name = updatedData['name'];
-              id = updatedData['id'];
-              gender = updatedData['gender'];
-              mobile = updatedData['mobile'];
-              department = updatedData['department'];
-              dob = updatedData['dob'];
-              email = updatedData['email'];
-              studentType = updatedData['studentType'];
-              profileImagePath = updatedData['profileImagePath'];
-            });
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.3),
-          shape: BoxShape.circle,
-        ),
-        child: const Icon(Icons.edit, color: Colors.white, size: 24),
-      ),
-    );
-  }
 }
 
-/// Custom clipper that creates a wavy bottom edge for the header.
 class WaveClipper extends CustomClipper<Path> {
   @override
   Path getClip(Size size) {
     var path = Path();
-    // Start at top left.
     path.lineTo(0, size.height - 40);
-    // First curve.
     var firstControlPoint = Offset(size.width / 4, size.height);
     var firstEndPoint = Offset(size.width / 2, size.height - 30);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-    // Second curve.
+    path.quadraticBezierTo(firstControlPoint.dx, firstControlPoint.dy,
+        firstEndPoint.dx, firstEndPoint.dy);
     var secondControlPoint = Offset(3 * size.width / 4, size.height - 80);
     var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-    // Line to top right and close.
+    path.quadraticBezierTo(secondControlPoint.dx, secondControlPoint.dy,
+        secondEndPoint.dx, secondEndPoint.dy);
     path.lineTo(size.width, 0);
     path.close();
     return path;
