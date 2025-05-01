@@ -150,7 +150,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
 
         return Scaffold(
           appBar: AppBar(
-            backgroundColor: Colors.blueAccent,
+            backgroundColor: Colors.lightBlue[300],
             title: Text(
               widget.eventData["eventName"] ?? "Event Details",
               style: TextStyle(fontWeight: FontWeight.bold),
@@ -241,7 +241,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                     child: ElevatedButton(
                                       onPressed: isRegistered ? null : _registerForEvent,
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: isRegistered ? Colors.grey : Colors.blueAccent,
+                                        backgroundColor: isRegistered ? Colors.black : Colors.lightBlue[300],
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),
@@ -259,7 +259,7 @@ class _EventDetailPageState extends State<EventDetailPage> {
                                       icon: const Icon(Icons.qr_code_2),
                                       label: const Text('Show QR Code'),
                                       style: ElevatedButton.styleFrom(
-                                        backgroundColor: isRegistered ? Colors.green : Colors.grey,
+                                        backgroundColor: isRegistered ? Colors.green : Colors.black,
                                         padding: const EdgeInsets.symmetric(vertical: 14),
                                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                                       ),

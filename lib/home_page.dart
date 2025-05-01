@@ -82,23 +82,38 @@ class _HomePageState extends State<HomePage> {
   void _showDepartmentFilter() {
     showModalBottomSheet(
       context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      backgroundColor: Colors.white,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-          ),
-          child: Wrap(
-            children: departments.map((dept) {
-              return ListTile(
-                title: Text(dept, style: TextStyle(color: Colors.blueAccent)),
-                onTap: () {
-                  _onDepartmentSelected(dept);
-                  Navigator.pop(context);
-                },
-              );
-            }).toList(),
+        return Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Select Department",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+              ),
+              SizedBox(height: 10),
+              Wrap(
+                spacing: 10,
+                runSpacing: 10,
+                children: departments.map((dept) {
+                  final isSelected = dept == selectedDepartment;
+                  return ChoiceChip(
+                    label: Text(dept),
+                    selected: isSelected,
+                    selectedColor: Colors.blueAccent,
+                    backgroundColor: Colors.grey[200],
+                    labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                    onSelected: (_) {
+                      _onDepartmentSelected(dept);
+                      Navigator.pop(context);
+                    },
+                  );
+                }).toList(),
+              ),
+            ],
           ),
         );
       },
@@ -108,41 +123,50 @@ class _HomePageState extends State<HomePage> {
   void _showNotifications() {
     showModalBottomSheet(
       context: context,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(25))),
+      backgroundColor: Colors.white,
       builder: (BuildContext context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(25)),
-          ),
-          child: ListView(
-            children: [
-              ListTile(
-                leading: Icon(Icons.notifications, color: Colors.blueAccent),
-                title: Text('Event A is starting soon!', style: TextStyle(color: Colors.blueAccent)),
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                "Notifications",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blueAccent),
               ),
-              ListTile(
-                leading: Icon(Icons.notifications, color: Colors.blueAccent),
-                title: Text('New event added: Tech Talk', style: TextStyle(color: Colors.blueAccent)),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                itemCount: 5,
+                separatorBuilder: (_, __) => Divider(color: Colors.grey[300]),
+                itemBuilder: (context, index) {
+                  final notifications = [
+                    "AI/ML event is starting soon!",
+                    "New event added: Tech Talk",
+                    "Your registration for Workshop B is confirmed.",
+                    "Reminder: Seminar on Blockchain tomorrow.",
+                    "Concert tickets are now available."
+                  ];
+                  return Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    child: ListTile(
+                      leading: Icon(Icons.notifications_active_rounded, color: Colors.blueAccent),
+                      title: Text(notifications[index]),
+                      trailing: Icon(Icons.chevron_right),
+                      onTap: () {}, // Add optional navigation
+                    ),
+                  );
+                },
               ),
-              ListTile(
-                leading: Icon(Icons.notifications, color: Colors.blueAccent),
-                title: Text('Your registration for Workshop B is confirmed.', style: TextStyle(color: Colors.blueAccent)),
-              ),
-              ListTile(
-                leading: Icon(Icons.notifications, color: Colors.blueAccent),
-                title: Text('Reminder: Seminar on AI tomorrow.', style: TextStyle(color: Colors.blueAccent)),
-              ),
-              ListTile(
-                leading: Icon(Icons.notifications, color: Colors.blueAccent),
-                title: Text('Concert tickets are now available.', style: TextStyle(color: Colors.blueAccent)),
-              ),
-            ],
-          ),
+            ),
+          ],
         );
       },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -185,19 +209,28 @@ class _HomePageState extends State<HomePage> {
     }
 
     return GestureDetector(
-      onTap: () {
-        if (isSearching) {
-          setState(() {
-            isSearching = false;
-            searchQuery = "";
-          });
-        }
-      },
+      behavior: HitTestBehavior.opaque,
+        onTap: () {
+          FocusScope.of(context).unfocus(); // Dismiss keyboard
+          if (isSearching) {
+            setState(() {
+              isSearching = false;
+              searchQuery = "";
+            });
+          }
+        },
       child: Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.lightBlue[300], // Light blue theme
           title: !isSearching
-              ?  Image.asset('assets/Logo.PNG', height: 40)
+              ? GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedIndex = 1; // Navigate to All Events page
+              });
+            },
+            child: Image.asset('assets/Logo.PNG', height: 40),
+          )
               : TextField(
             autofocus: true,
             decoration: InputDecoration(
@@ -212,25 +245,29 @@ class _HomePageState extends State<HomePage> {
               });
             },
           ),
+
           actions: [
-            IconButton(
-              icon: Icon(isSearching ? Icons.close : Icons.search, color: Colors.white),
-              onPressed: () {
-                setState(() {
-                  isSearching = !isSearching;
-                  if (!isSearching) searchQuery = "";
-                });
-              },
-            ),
-            IconButton(
-              icon: Icon(Icons.filter_list, color: Colors.white),
-              onPressed: _showDepartmentFilter,
-            ),
+            if (_selectedIndex == 1) ...[
+              IconButton(
+                icon: Icon(isSearching ? Icons.close : Icons.search, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    isSearching = !isSearching;
+                    if (!isSearching) searchQuery = "";
+                  });
+                },
+              ),
+              IconButton(
+                icon: Icon(Icons.filter_list, color: Colors.white),
+                onPressed: _showDepartmentFilter,
+              ),
+            ],
             IconButton(
               icon: Icon(Icons.notifications, color: Colors.white),
               onPressed: _showNotifications,
             ),
           ],
+
         ),
         body: bodyContent,
         bottomNavigationBar: BottomNavigationBar(

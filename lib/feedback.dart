@@ -111,12 +111,12 @@ class _FeedbackPageState extends State<FeedbackPage>
                   SizedBox(height: 4),
                   Text('6. Additional Comments: ${_additionalCommentsController.text.trim()}'),
                   SizedBox(height: 4),
-                  Text('8. Session Engagement: $_sessionEngagement stars'),
+                  Text('7. Session Engagement: $_sessionEngagement stars'),
                   SizedBox(height: 4),
-                  Text('9. Organization Rating: $_organizationRating stars'),
+                  Text('8. Organization Rating: $_organizationRating stars'),
                   SizedBox(height: 4),
                   Text(
-                      '10. Future Attendance: ${_futureAttendance == YesNo.yes ? "Yes" : _futureAttendance == YesNo.no ? "No" : "Somewhat"}'),
+                      '9. Future Attendance: ${_futureAttendance == YesNo.yes ? "Yes" : _futureAttendance == YesNo.no ? "No" : "Somewhat"}'),
                 ],
               ),
             ),
@@ -174,12 +174,7 @@ class _FeedbackPageState extends State<FeedbackPage>
       ValueChanged<YesNo?> onChanged) {
     return Row(
       children: [
-        Radio<YesNo>(
-          value: value,
-          groupValue: groupValue,
-          activeColor: Colors.lightBlue,
-          onChanged: onChanged,
-        ),
+        Radio<YesNo>(value: value, groupValue: groupValue, onChanged: onChanged),
         Text(label, style: TextStyle(fontSize: 16)),
       ],
     );
@@ -188,7 +183,6 @@ class _FeedbackPageState extends State<FeedbackPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // Gradient background for a modern look.
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -216,16 +210,12 @@ class _FeedbackPageState extends State<FeedbackPage>
                     ),
                   ),
                   SizedBox(height: 24),
-                  // Question 1: Overall Experience Rating
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '1. How would you rate your overall experience?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('1. How would you rate your overall experience?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Center(
                           child: RatingBar.builder(
@@ -235,10 +225,7 @@ class _FeedbackPageState extends State<FeedbackPage>
                             allowHalfRating: true,
                             itemCount: 5,
                             itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
-                            itemBuilder: (context, _) => Icon(
-                              Icons.star,
-                              color: Colors.amber,
-                            ),
+                            itemBuilder: (context, _) => Icon(Icons.star, color: Colors.amber),
                             onRatingUpdate: (rating) {
                               setState(() {
                                 _overallExperience = rating;
@@ -249,16 +236,12 @@ class _FeedbackPageState extends State<FeedbackPage>
                       ],
                     ),
                   ),
-                  // Question 2: Favorite Part of the Event
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '2. What was your favorite part of the event?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('2. What was your favorite part of the event?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         TextFormField(
                           controller: _favoritePartController,
@@ -273,16 +256,12 @@ class _FeedbackPageState extends State<FeedbackPage>
                       ],
                     ),
                   ),
-                  // Question 3: Likelihood to Recommend
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '3. How likely are you to recommend this event to a friend?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('3. How likely are you to recommend this event?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Center(
                           child: RatingBar.builder(
@@ -292,10 +271,7 @@ class _FeedbackPageState extends State<FeedbackPage>
                             allowHalfRating: true,
                             itemCount: 5,
                             itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
-                            itemBuilder: (context, _) => Icon(
-                              Icons.star,
-                              color: Colors.green,
-                            ),
+                            itemBuilder: (context, _) => Icon(Icons.star, color: Colors.green),
                             onRatingUpdate: (rating) {
                               setState(() {
                                 _recommendRating = rating;
@@ -306,62 +282,49 @@ class _FeedbackPageState extends State<FeedbackPage>
                       ],
                     ),
                   ),
-                  // Question 4: Event Expectations
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '4. Did the event meet your expectations?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('4. Did the event meet your expectations?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadioOption(YesNo.yes, 'Yes', _expectations,
-                                    (value) {
-                                  setState(() {
-                                    _expectations = value;
-                                  });
-                                }),
-                            _buildRadioOption(YesNo.no, 'No', _expectations,
-                                    (value) {
-                                  setState(() {
-                                    _expectations = value;
-                                  });
-                                }),
-                            _buildRadioOption(
-                                YesNo.somewhat, 'Somewhat', _expectations,
-                                    (value) {
-                                  setState(() {
-                                    _expectations = value;
-                                  });
-                                }),
+                            _buildRadioOption(YesNo.yes, 'Yes', _expectations, (value) {
+                              setState(() {
+                                _expectations = value;
+                              });
+                            }),
+                            _buildRadioOption(YesNo.no, 'No', _expectations, (value) {
+                              setState(() {
+                                _expectations = value;
+                              });
+                            }),
+                            _buildRadioOption(YesNo.somewhat, 'Somewhat', _expectations, (value) {
+                              setState(() {
+                                _expectations = value;
+                              });
+                            }),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  // Question 5: Suggestions for Improvement
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '5. What improvements would you suggest?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('5. Suggestions for Improvement',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         TextFormField(
                           controller: _improvementsController,
-                          decoration: _buildInputDecoration('Your suggestions'),
-                          maxLines: 3,
+                          decoration: _buildInputDecoration('Enter suggestions'),
                           validator: (value) {
                             if (value == null || value.trim().isEmpty) {
-                              return 'Please share your suggestions';
+                              return 'Please provide your suggestions';
                             }
                             return null;
                           },
@@ -369,36 +332,52 @@ class _FeedbackPageState extends State<FeedbackPage>
                       ],
                     ),
                   ),
-                  // Question 6: Additional Comments
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '6. Any additional comments?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('6. Any additional comments?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         TextFormField(
                           controller: _additionalCommentsController,
-                          decoration: _buildInputDecoration('Your comments'),
-                          maxLines: 3,
+                          decoration: _buildInputDecoration('Your thoughts here'),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please add any comments';
+                            }
+                            return null;
+                          },
                         ),
                       ],
                     ),
                   ),
-
-                  // Question 8: Session Engagement
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '7. How engaging were the sessions?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
+                        Text('7. Feedback on Speakers',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 8),
+                        TextFormField(
+                          controller: _speakersFeedbackController,
+                          decoration: _buildInputDecoration('Speaker feedback'),
+                          validator: (value) {
+                            if (value == null || value.trim().isEmpty) {
+                              return 'Please provide feedback on the speakers';
+                            }
+                            return null;
+                          },
                         ),
+                      ],
+                    ),
+                  ),
+                  _buildCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('8. How engaging were the sessions?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Center(
                           child: RatingBar.builder(
@@ -408,10 +387,7 @@ class _FeedbackPageState extends State<FeedbackPage>
                             allowHalfRating: true,
                             itemCount: 5,
                             itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
-                            itemBuilder: (context, _) => Icon(
-                              Icons.star,
-                              color: Colors.orange,
-                            ),
+                            itemBuilder: (context, _) => Icon(Icons.star, color: Colors.orange),
                             onRatingUpdate: (rating) {
                               setState(() {
                                 _sessionEngagement = rating;
@@ -422,16 +398,12 @@ class _FeedbackPageState extends State<FeedbackPage>
                       ],
                     ),
                   ),
-                  // Question 9: Event Organization
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '8. How would you rate the event organization?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('9. How was the event organization?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Center(
                           child: RatingBar.builder(
@@ -441,10 +413,7 @@ class _FeedbackPageState extends State<FeedbackPage>
                             allowHalfRating: true,
                             itemCount: 5,
                             itemPadding: EdgeInsets.symmetric(horizontal: 4.0),
-                            itemBuilder: (context, _) => Icon(
-                              Icons.star,
-                              color: Colors.purple,
-                            ),
+                            itemBuilder: (context, _) => Icon(Icons.star, color: Colors.purple),
                             onRatingUpdate: (rating) {
                               setState(() {
                                 _organizationRating = rating;
@@ -455,74 +424,66 @@ class _FeedbackPageState extends State<FeedbackPage>
                       ],
                     ),
                   ),
-                  // Question 10: Future Attendance
                   _buildCard(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          '9. Would you attend future events?',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.bold),
-                        ),
+                        Text('10. Would you attend future events?',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                         SizedBox(height: 8),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildRadioOption(YesNo.yes, 'Yes', _futureAttendance,
-                                    (value) {
-                                  setState(() {
-                                    _futureAttendance = value;
-                                  });
-                                }),
-                            _buildRadioOption(YesNo.no, 'No', _futureAttendance,
-                                    (value) {
-                                  setState(() {
-                                    _futureAttendance = value;
-                                  });
-                                }),
-                            _buildRadioOption(YesNo.somewhat, 'Somewhat', _futureAttendance,
-                                    (value) {
-                                  setState(() {
-                                    _futureAttendance = value;
-                                  });
-                                }),
+                            _buildRadioOption(YesNo.yes, 'Yes', _futureAttendance, (value) {
+                              setState(() {
+                                _futureAttendance = value;
+                              });
+                            }),
+                            _buildRadioOption(YesNo.no, 'No', _futureAttendance, (value) {
+                              setState(() {
+                                _futureAttendance = value;
+                              });
+                            }),
+                            _buildRadioOption(YesNo.somewhat, 'Somewhat', _futureAttendance, (value) {
+                              setState(() {
+                                _futureAttendance = value;
+                              });
+                            }),
                           ],
                         ),
                       ],
                     ),
                   ),
                   SizedBox(height: 24),
-                  // Animated Submit Button
+                  // Submit Button with Animation
                   Center(
-                    child: GestureDetector(
-                      onTapDown: (_) => _animationController.forward(),
-                      onTapUp: (_) {
-                        _animationController.reverse();
-                        _submitFeedback();
-                      },
-                      child: ScaleTransition(
-                        scale: _scaleAnimation,
-                        child: ElevatedButton(
-                          onPressed: () {},
+                    child: AnimatedBuilder(
+                      animation: _scaleAnimation,
+                      builder: (context, child) {
+                        return ElevatedButton(
+                          onPressed: _submitFeedback,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: EdgeInsets.symmetric(
-                                vertical: 16, horizontal: 32),
+                            padding: EdgeInsets.symmetric(horizontal: 40, vertical: 16),
+                            backgroundColor: Colors.lightBlue,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
-                            elevation: 6,
                           ),
-                          child: Text(
-                            'Submit Feedback',
-                            style: TextStyle(fontSize: 18),
+                          child: Transform.scale(
+                            scale: _scaleAnimation.value,
+                            child: Text(
+                              'Submit Feedback',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
                           ),
-                        ),
-                      ),
+                        );
+                      },
                     ),
                   ),
-                  SizedBox(height: 24),
                 ],
               ),
             ),

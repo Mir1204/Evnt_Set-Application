@@ -38,7 +38,9 @@ class _RegisteredEventsSectionState extends State<RegisteredEventsSection> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Registered Events"),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.transparent,
+        foregroundColor: Colors.black,
+        elevation: 0,
       ),
       body: registeredEvents.isEmpty
           ? const Center(child: Text("No registered events found."))

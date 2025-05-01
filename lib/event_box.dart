@@ -83,7 +83,7 @@ class EventBox extends StatelessWidget {
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       ),
-                      child: Text(isRegistered ? "Show QR Code" : "Register Now"),
+                      child: Text(isRegistered ? "View Details" : "Register Now"),
                     ),
                   ),
                   if (showQRButton && onShowQR != null)
